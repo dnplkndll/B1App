@@ -1,25 +1,36 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { PwaRegister } from "./PwaRegister";
+import { MobileClientLayout } from "./MobileClientLayout";
+import { loadChurchAppearance } from "./loadChurchAppearance";
 
-export async function generateMetadata(): Promise<Metadata> {
+type LayoutParams = Promise<{ sdSlug: string }>;
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false }
+};
+
+export async function generateViewport({ params }: { params: LayoutParams }): Promise<Viewport> {
+  const { sdSlug } = await params;
+  const { primaryColor } = await loadChurchAppearance(sdSlug);
   return {
-    manifest: "/mobile/manifest.webmanifest",
-    themeColor: "#0D47A1",
-    viewport: {
-      width: "device-width",
-      initialScale: 1,
-      maximumScale: 1,
-      userScalable: false,
-      viewportFit: "cover",
-    },
+    themeColor: primaryColor || "#0D47A1",
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover"
   };
 }
 
 export default function MobileLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <PwaRegister />
-      {children}
+      <link rel="manifest" href="/mobile/manifest.webmanifest" />
+      <link rel="preconnect" href="https://content.churchapps.org" />
+      <link rel="preconnect" href="https://content.lessons.church" />
+      <MobileClientLayout>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+        <PwaRegister />
+        {children}
+      </MobileClientLayout>
     </>
   );
 }
