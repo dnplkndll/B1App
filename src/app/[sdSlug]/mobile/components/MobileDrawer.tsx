@@ -31,8 +31,8 @@ export const MobileDrawer = ({ links, onNavigate }: Props) => {
   const personPhoto = context?.person?.photo;
   const contentRoot = (typeof window !== "undefined" ? (window as any).__envVars?.ContentRoot : undefined) || "";
   const photoUrl = personPhoto ? (personPhoto.startsWith("http") ? personPhoto : `${contentRoot}${personPhoto}`) : undefined;
-  const firstName = UserHelper.user?.firstName || "";
-  const lastName = UserHelper.user?.lastName || "";
+  const firstName = context?.person?.name?.first || UserHelper.user?.firstName || "";
+  const lastName = context?.person?.name?.last || UserHelper.user?.lastName || "";
   const initials = getInitials({ name: { first: firstName, last: lastName } });
 
   const isActive = (url: string): boolean => {
@@ -187,7 +187,7 @@ export const MobileDrawer = ({ links, onNavigate }: Props) => {
             fullWidth
             startIcon={<LogoutIcon sx={{ fontSize: 24, color: tc.primary }} />}
             component="a"
-            href="/logout"
+            href="/mobile/logout"
             sx={{
               color: tc.primary,
               borderColor: tc.primary,
