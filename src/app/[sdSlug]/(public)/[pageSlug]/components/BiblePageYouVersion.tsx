@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Container, Box, Button, ButtonGroup } from "@mui/material";
 import { Locale } from "@churchapps/apphelper";
-import { BibleSDKProvider, BibleReader } from "@youversion/platform-react-ui";
+import { YouVersionProvider, BibleReader } from "@youversion/platform-react-ui";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
@@ -64,7 +64,7 @@ export function BiblePageYouVersion() {
   return (
     <Container>
       <h1 style={{ textAlign: "center" }}>{Locale.label("pageSlug.bible")}</h1>
-      <BibleSDKProvider appKey={apiKey}>
+      <YouVersionProvider appKey={apiKey}>
         <div style={{ marginTop: "20px" }}>
           <BibleReader.Root
             versionId={versionId}
@@ -92,7 +92,7 @@ export function BiblePageYouVersion() {
             </Box>
           </BibleReader.Root>
         </div>
-      </BibleSDKProvider>
+      </YouVersionProvider>
     </Container>
   );
 }
