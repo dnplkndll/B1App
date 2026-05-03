@@ -25,8 +25,6 @@ import type {
 } from "@churchapps/helpers";
 import { LessonsContentProvider } from "@churchapps/helpers";
 import { getProvider, type InstructionItem, type IProvider, type Instructions } from "@churchapps/content-providers";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { PlanItem as PlanItemRow } from "@/app/[sdSlug]/mobile/components/plans/PlanItem";
 import { LessonPreview } from "@/app/[sdSlug]/mobile/components/plans/LessonPreview";
 import { ExpandedLessonView } from "@/app/[sdSlug]/mobile/components/plans/ExpandedLessonView";
@@ -523,37 +521,25 @@ export const PlanDetail = ({ id, config: _config }: Props) => {
             <>
               {lessonPreview.instructions && (
                 <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.5 }}>
-                  <ToggleButtonGroup
-                    value={orderView}
-                    exclusive
+                  <Button
+                    variant="contained"
                     size="small"
-                    onChange={(_e, v) => { if (v) setOrderView(v); }}
-                    aria-label={Locale.label("mobile.details.viewMode")}
+                    startIcon={<Icon>school</Icon>}
+                    onClick={() => setOrderView("teach")}
+                    sx={{ textTransform: "none", fontWeight: 600 }}
                   >
-                    <ToggleButton value="summary" sx={{ textTransform: "none", fontWeight: 600 }}>
-                      {Locale.label("mobile.details.viewSummary")}
-                    </ToggleButton>
-                    <ToggleButton value="teach" sx={{ textTransform: "none", fontWeight: 600 }}>
-                      {Locale.label("mobile.details.viewTeach")}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
+                    {Locale.label("mobile.details.viewTeach")}
+                  </Button>
                 </Box>
               )}
-              {orderView === "teach" && lessonPreview.instructions ? (
-                <ExpandedLessonView
-                  instructions={lessonPreview.instructions}
-                  lessonName={lessonPreview.venueName || ""}
-                />
-              ) : (
-                <LessonPreview
-                  lessonItems={lessonPreview.items}
-                  venueName={lessonPreview.venueName || ""}
-                  externalRef={externalRef}
-                  associatedProviderId={plan.providerId}
-                  associatedVenueId={plan.providerPlanId}
-                  ministryId={plan.ministryId}
-                />
-              )}
+              <LessonPreview
+                lessonItems={lessonPreview.items}
+                venueName={lessonPreview.venueName || ""}
+                externalRef={externalRef}
+                associatedProviderId={plan.providerId}
+                associatedVenueId={plan.providerPlanId}
+                ministryId={plan.ministryId}
+              />
             </>
           ) : planItems.length === 0 ? (
             <Typography sx={{ fontSize: 14, color: tc.textMuted, textAlign: "center", py: 2 }}>
@@ -604,6 +590,15 @@ export const PlanDetail = ({ id, config: _config }: Props) => {
             ))
           )}
         </Box>
+      )}
+
+      {lessonPreview?.instructions && (
+        <ExpandedLessonView
+          open={orderView === "teach"}
+          onClose={() => setOrderView("summary")}
+          instructions={lessonPreview.instructions}
+          lessonName={lessonPreview.venueName || ""}
+        />
       )}
 
     </Box>
