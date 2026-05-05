@@ -160,7 +160,7 @@ export const GroupChatModal = ({
       SocketHelper.removeHandler(handlerId + "-del");
       SubscriptionManager.leaveRoom(conversationId, churchId).catch(() => { /* ignore */ });
     };
-  }, [open, conversations[0]?.id, loadConversations]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, conversations[0]?.id, loadConversations]);
 
   const allMessages = React.useMemo(() => {
     const flat: Message[] = [];
