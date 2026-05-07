@@ -396,9 +396,13 @@ export const GroupsPage = ({ config: _config }: Props) => {
               key={req.id}
               data-testid={`my-pending-${req.id}`}
               sx={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
                 p: `${mobileTheme.spacing.sm}px ${mobileTheme.spacing.md}px`,
-                bgcolor: tc.surface, borderRadius: `${mobileTheme.radius.md}px`, boxShadow: mobileTheme.shadows.sm
+                bgcolor: tc.surface,
+                borderRadius: `${mobileTheme.radius.md}px`,
+                boxShadow: mobileTheme.shadows.sm
               }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={{ fontSize: 14, fontWeight: 600, color: tc.text }}>

@@ -13,7 +13,7 @@
     "build": "next build --webpack",
     "postbuild": "git checkout src/instrumentation.ts src/instrumentation-client.ts 2>/dev/null || true",
     "start": "next start",
-    "lint": "next lint --fix",
+    "lint": "eslint --fix src/",
     "pretest": "node tests/setup/pretest.mjs",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
