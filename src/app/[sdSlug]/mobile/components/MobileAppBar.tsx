@@ -6,7 +6,7 @@ import { AppBar, Avatar, Badge, IconButton, Stack, Toolbar, Typography } from "@
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import { Locale, useNotifications } from "@churchapps/apphelper";
+import { Locale, PersonHelper, useNotifications } from "@churchapps/apphelper";
 import UserContext from "@/context/UserContext";
 import { ConfigurationInterface } from "@/helpers/ConfigHelper";
 import { mobileTheme, SCREEN_TITLES, mobileSlugFromPath } from "./mobileTheme";
@@ -42,6 +42,7 @@ export const MobileAppBar = ({ config, primaryColor, onPrimary, drawerWidth, onM
   const headerLogo = mode === "dark" ? (logoLight || logoDark) : (logoDark || logoLight);
   const signedIn = !!userContext?.user?.firstName;
   const initials = getInitials({ name: { first: userContext?.user?.firstName, last: userContext?.user?.lastName } });
+  const photoUrl = userContext?.person?.photo ? PersonHelper.getPhotoUrl(userContext.person) : undefined;
 
   const handleBack = () => {
     router.push("/mobile/dashboard");
@@ -108,14 +109,17 @@ export const MobileAppBar = ({ config, primaryColor, onPrimary, drawerWidth, onM
               </IconButton>
               <NotificationBellMenu anchorEl={bellRef.current} open={bellOpen} onClose={() => setBellOpen(false)} />
               <IconButton onClick={onAvatarClick} aria-label={Locale.label("mobile.components.profile")} sx={{ p: 0.5 }}>
-                <Avatar sx={{
-                  width: 30,
-                  height: 30,
-                  bgcolor: "rgba(255,255,255,0.25)",
-                  color: onPrimary,
-                  fontSize: 13,
-                  fontWeight: 600
-                }}>
+                <Avatar
+                  src={photoUrl}
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    bgcolor: "rgba(255,255,255,0.25)",
+                    color: onPrimary,
+                    fontSize: 13,
+                    fontWeight: 600
+                  }}
+                >
                   {initials}
                 </Avatar>
               </IconButton>
