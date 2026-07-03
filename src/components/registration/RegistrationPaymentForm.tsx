@@ -61,7 +61,15 @@ const PaymentEntry: React.FC<{
 
   const useNew = selectedMethod === "new" || !hasSaved;
 
-  const getContext = () => ({
+  const getContext = (): {
+    provider: string;
+    gatewayId?: string;
+    churchId: string;
+    amount: number;
+    funds: { id: string; amount: number }[];
+    person: { id?: string; email?: string; name?: string };
+    currency?: string;
+  } => ({
     provider: provider.key,
     gatewayId: gateway?.id,
     churchId,
@@ -287,3 +295,4 @@ export const RegistrationPaymentForm: React.FC<Props> = (props) => {
     </Box>
   );
 };
+

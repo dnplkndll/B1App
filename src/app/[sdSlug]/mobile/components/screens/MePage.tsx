@@ -109,8 +109,8 @@ export const MePage = ({ config: _config }: Props) => {
     queryKey: ["me-booking-catalog"],
     queryFn: async () => {
       const [rooms, resources] = await Promise.all([
-        ApiHelper.get("/rooms", "ContentApi").catch(() => []),
-        ApiHelper.get("/resources", "ContentApi").catch(() => [])
+        ApiHelper.get("/rooms", "ContentApi").catch((): any[] => []),
+        ApiHelper.get("/resources", "ContentApi").catch((): any[] => [])
       ]);
       return { rooms: Array.isArray(rooms) ? rooms : [], resources: Array.isArray(resources) ? resources : [] };
     },

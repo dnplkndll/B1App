@@ -151,7 +151,7 @@ export function EventRegister({ churchId, eventId, event }: Props) {
             personEmail={isLoggedIn ? context?.person?.contactInfo?.email : reg.guestEmail}
             personName={`${reg.primaryFirstName} ${reg.primaryLastName}`.trim()}
             amount={reg.total}
-            currency={event.currency as any}
+            currency={(event as EventInterface & { currency?: string }).currency}
             summaryLines={reg.summaryLines}
             subtotal={reg.subtotal}
             discountAmount={reg.discountAmount}
