@@ -64,8 +64,8 @@ export const BookingPicker = ({ value, onChange, start, end, recurring, rRule, e
   React.useEffect(() => {
     let active = true;
     Promise.all([
-      ApiHelper.get("/rooms", "ContentApi").catch(() => []),
-      ApiHelper.get("/resources", "ContentApi").catch(() => [])
+      ApiHelper.get("/rooms", "ContentApi").catch((): unknown[] => []),
+      ApiHelper.get("/resources", "ContentApi").catch((): unknown[] => [])
     ]).then(([r, res]) => {
       if (!active) return;
       const roomList = Array.isArray(r) ? r : [];
