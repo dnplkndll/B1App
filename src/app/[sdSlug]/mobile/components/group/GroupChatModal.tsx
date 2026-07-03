@@ -86,8 +86,7 @@ export const GroupChatModal = ({
   const [confirmDelete, setConfirmDelete] = React.useState<Message | null>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
-  // Patch a message's reaction list in place. isMine only flips the caller's own
-  // highlight; inbound socket echoes for other people leave it untouched.
+  // isMine flips only the caller's own highlight; inbound echoes don't change status.
   const applyReaction = React.useCallback((messageId: string, emoji: string, added: boolean, isMine: boolean) => {
     setConversations((prev) => prev.map((c) => ({
       ...c,
@@ -221,8 +220,7 @@ export const GroupChatModal = ({
     return flat;
   }, [conversations]);
 
-  // Hide subscription marker rows from the rendered thread — they're an internal
-  // signal for NotificationHelper, not user-facing chat.
+  // Subscription marker rows are internal signals for NotificationHelper, not user-facing.
   const messages = React.useMemo(
     () => allMessages.filter((m) => m.messageType !== SUBSCRIPTION_MESSAGE_TYPE),
     [allMessages]

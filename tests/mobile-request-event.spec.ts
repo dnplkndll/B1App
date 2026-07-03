@@ -1,9 +1,7 @@
 import { test, expect, request, type Page } from "@playwright/test";
 import { mobileLogoutButton } from "./helpers/mobile";
 
-// CA-1 member room/resource request UI. Seed rooms: Sanctuary/Fellowship Hall (no
-// approval → auto-approved), Youth Room (approvalGroupId=GRP00000013; demo is NOT a
-// member → pending). demo submits via /mobile/requestEvent → /events/request.
+// CA-1: Sanctuary/Fellowship Hall (auto-approved), Youth Room (approval-gated, demo pending)
 const API_BASE = "http://localhost:8084";
 const CHURCH_ID = "CHU00000001";
 
@@ -20,7 +18,6 @@ async function fillRoomRequest(page: Page, roomName: RegExp): Promise<void> {
   await page.goto("/mobile/requestEvent");
   await expect(mobileLogoutButton(page)).toBeVisible({ timeout: 30000 });
   await page.getByTestId("request-title").locator("input").fill(`Test Request ${Date.now()}`);
-  // Pick a room from the multi-select.
   const roomSelect = page.getByTestId("booking-rooms");
   await expect(roomSelect).toBeVisible({ timeout: 15000 });
   await roomSelect.click();
@@ -32,7 +29,7 @@ async function fillRoomRequest(page: Page, roomName: RegExp): Promise<void> {
 
 test.describe("Mobile event request (CA-1)", () => {
   test.afterEach(async () => {
-    // Withdraw any still-pending requests this suite created.
+    // Clean up pending requests created during test.
     const jwt = await demoJwt();
     const ctx = await request.newContext();
     const res = await ctx.get(`${API_BASE}/content/events/requests/mine`, { headers: { Authorization: "Bearer " + jwt } });
@@ -49,13 +46,11 @@ test.describe("Mobile event request (CA-1)", () => {
     await fillRoomRequest(page, /Youth Room/i);
     await expect(page.getByTestId("request-outcome")).toContainText(/Pending/i);
 
-    // Done → My Requests shows the pending row.
     await page.getByTestId("request-done").click();
     await expect(page).toHaveURL(/\/mobile\/myRequests/, { timeout: 15000 });
     const pendingCard = page.locator('[data-testid^="request-status-"]', { hasText: /Pending/i }).first();
     await expect(pendingCard).toBeVisible({ timeout: 15000 });
 
-    // Cancel the pending request.
     await page.locator('[data-testid^="request-cancel-"]').first().click();
     await page.getByTestId("request-cancel-confirm").click();
     await expect(page.getByTestId("request-outcome")).toHaveCount(0);

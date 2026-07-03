@@ -1,8 +1,7 @@
 import { test, expect, request, type Page } from "@playwright/test";
 import { mobileLogoutButton } from "./helpers/mobile";
 
-// GR-1 group event RSVP. EVT00000018 "Midweek Small Group" is a weekly recurring
-// event on GRP00000004 (demo + tester are members). rsvpDisabled=0 in the seed.
+// GR-1: EVT00000018 (Midweek Small Group) weekly recurring on GRP00000004 (demo + tester members)
 const API_BASE = "http://localhost:8084";
 const CHURCH_ID = "CHU00000001";
 const GROUP_ID = "GRP00000004";
@@ -19,16 +18,13 @@ async function jwtFor(email: string): Promise<string> {
   return uc?.jwt as string;
 }
 
-// Open the group events tab and select the calendar day holding EVENT_ID's next
-// occurrence so its RSVP control renders. EVT00000018 recurs weekly, so a matching
-// Wednesday always exists in the current or next month view.
+// Open group events tab and find a matching day cell for the RSVP control.
 async function openOccurrence(page: Page): Promise<void> {
   await page.goto(`/mobile/groups/${GROUP_ID}`);
   await expect(mobileLogoutButton(page)).toBeVisible({ timeout: 30000 });
   await page.getByRole("tab", { name: /Events/i }).click();
   const control = page.getByTestId(`rsvp-${EVENT_ID}`);
   for (let i = 0; i < 3; i++) {
-    // Try each day cell that has the event within the visible month.
     const cells = page.locator('[data-testid^="day-"]');
     const count = await cells.count();
     for (let d = 0; d < count; d++) {
@@ -42,7 +38,7 @@ async function openOccurrence(page: Page): Promise<void> {
 
 test.describe("Mobile group event RSVP", () => {
   test.afterAll(async () => {
-    // Clean up demo's RSVP rows so reruns start clean.
+    // Clean up test RSVP rows for reruns.
     const jwt = await jwtFor("demo@b1.church");
     const ctx = await request.newContext();
     await ctx.delete(`${API_BASE}/content/events/${EVENT_ID}/rsvp?occurrenceStart=${encodeURIComponent(OCCURRENCE)}`, { headers: { Authorization: "Bearer " + jwt } }).catch(() => {});
@@ -57,16 +53,13 @@ test.describe("Mobile group event RSVP", () => {
     await yes.click();
     await expect(yes).toContainText("1", { timeout: 10000 });
 
-    // Persists across a full reload.
     await openOccurrence(page);
     await expect(page.getByTestId(`rsvp-${EVENT_ID}-yes`)).toContainText("1", { timeout: 10000 });
 
-    // Change to Maybe: yes count clears, maybe becomes 1.
     await page.getByTestId(`rsvp-${EVENT_ID}-maybe`).click();
     await expect(page.getByTestId(`rsvp-${EVENT_ID}-maybe`)).toContainText("1", { timeout: 10000 });
     await expect(page.getByTestId(`rsvp-${EVENT_ID}-yes`)).not.toContainText("1");
 
-    // Clear by clicking the active response again.
     await page.getByTestId(`rsvp-${EVENT_ID}-maybe`).click();
     await expect(page.getByTestId(`rsvp-${EVENT_ID}-maybe`)).not.toContainText("1", { timeout: 10000 });
   });
@@ -80,7 +73,6 @@ test.describe("Mobile group event RSVP", () => {
     await ctx.post(`${API_BASE}/content/events/${EVENT_ID}/rsvp`, { headers: { Authorization: "Bearer " + demoJwt }, data: { occurrenceStart: OCCURRENCE, response: "yes" } });
     await ctx.post(`${API_BASE}/content/events/${EVENT_ID}/rsvp`, { headers: { Authorization: "Bearer " + testerJwt }, data: { occurrenceStart: OCCURRENCE, response: "no" } });
 
-    // Batch endpoint aggregates the counts.
     const batchRes = await ctx.get(`${API_BASE}/content/events/rsvps/group/${GROUP_ID}?from=2026-07-01T00:00:00.000Z&to=2026-08-01T00:00:00.000Z`, { headers: { Authorization: "Bearer " + demoJwt } });
     const batch = await batchRes.json();
     const entry = batch.find((b: any) => b.eventId === EVENT_ID);
@@ -88,7 +80,6 @@ test.describe("Mobile group event RSVP", () => {
     expect(entry.yes).toBeGreaterThanOrEqual(1);
     expect(entry.no).toBeGreaterThanOrEqual(1);
 
-    // Roster read shows both people (demo has group/staff access to the roster).
     const rosterRes = await ctx.get(`${API_BASE}/content/events/${EVENT_ID}/rsvps?occurrenceStart=${encodeURIComponent(OCCURRENCE)}`, { headers: { Authorization: "Bearer " + demoJwt } });
     expect(rosterRes.ok(), "roster read authorized for demo").toBeTruthy();
     const roster = await rosterRes.json();

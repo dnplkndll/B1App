@@ -1,16 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-// End-to-end paid registration commerce against the demo Grace church and its
-// real Stripe test-mode gateway (same gateway the donation specs use). These
-// drive the member wizard (info -> members -> selections -> payment -> confirm)
-// with Stripe test cards and assert on the ContentApi registration/payment rows.
-//
-// Seeded target: event EVT00000015 "Vacation Bible School" — Camper $45 (cap 6),
-// Chaperone $15 (unlimited), Commemorative T-Shirt $12 (maxQty 5), coupon
-// EARLYBIRD 10%, waitlistEnabled. Grace church CHU00000001, group GRP00000030.
-//
-// One shared mutable resource (demo@b1.church's registrations + Stripe customer),
-// so the whole file is serial.
+// Serial: tests share demo@b1.church's registrations + Stripe customer.
 test.describe.configure({ mode: "serial" });
 
 const API = "http://localhost:8084";
@@ -50,8 +40,6 @@ function captureDiagnostics(page: Page) {
 
 interface Auth { auth: string; personId: string }
 
-// Grab a real authenticated ContentApi Authorization header + the demo person id
-// by observing the registrations query the page fires on load.
 async function getAuth(page: Page): Promise<Auth> {
   const reqP = page.waitForRequest((r) => r.url().includes("/content/registrations/person/") && !!r.headers()["authorization"], { timeout: 40000 });
   await page.goto("/mobile/registrations");
@@ -76,8 +64,7 @@ async function cancelExisting(page: Page, a: Auth, eventId: string) {
   }
 }
 
-// Delete demo@b1.church's saved Stripe test cards so the payment step renders the
-// inline card entry deterministically (a clean slate, matching mobile-donate-stripe).
+// Deterministic payment entry: clean slate matching mobile-donate-stripe.
 async function clearCards(page: Page, a: Auth) {
   const resp = await apiGet(page, "/giving/paymentmethods/personid/" + a.personId, a);
   const methods = await resp.json();
@@ -95,7 +82,6 @@ async function createEvent(page: Page, a: Auth, overrides: any): Promise<string>
   return j[0].id;
 }
 
-// MUI Select opener: click the select root then the option by visible text.
 async function pickOption(page: Page, testid: string, optionText: RegExp) {
   await page.getByTestId(testid).click();
   await page.getByRole("option", { name: optionText }).click();
@@ -191,7 +177,6 @@ test.describe.serial("Registration commerce (paid checkout, coupon, waitlist, ed
   });
 
   test("edit post-submission: change T-shirt quantity, persisted", async ({ page }) => {
-    // Reuses the confirmed reg from the coupon test.
     await page.goto("/mobile/registrations");
     const mineBefore = (await personRegs(page, a)).find((r) => r.eventId === VBS && r.status !== "cancelled");
     expect(mineBefore, "an active VBS registration to edit").toBeTruthy();
@@ -231,10 +216,8 @@ test.describe.serial("Registration commerce (paid checkout, coupon, waitlist, ed
     if (!errored) console.log("DIAG:\n" + diag.join("\n"));
     expect(errored, "declined charge surfaced an error").toBe(true);
 
-    // Wizard recoverable — still on the payment step.
     await expect(page.getByTestId("reg-pay-button")).toBeVisible();
 
-    // No registration row persisted (server rolls back on charge failure).
     const active = (await personRegs(page, a)).filter((r) => r.eventId === VBS && r.status !== "cancelled");
     expect(active.length, "no registration created after decline").toBe(0);
   });
@@ -243,14 +226,12 @@ test.describe.serial("Registration commerce (paid checkout, coupon, waitlist, ed
     const eventId = await createEvent(page, a, { title: "Waitlist Test", capacity: 1, waitlistEnabled: true });
     await cancelExisting(page, a, eventId);
 
-    // Fill the single spot with an anonymous guest.
     const guestResp = await page.request.post(API + "/content/registrations/register", {
       headers: { "Content-Type": "application/json" },
       data: { churchId: CHURCH, eventId, guestInfo: { firstName: "Cap", lastName: "Filler", email: `filler+${Date.now()}@example.com` } }
     });
     expect((await guestResp.json()).status).toBe("confirmed");
 
-    // Demo person registers -> event full + waitlistEnabled -> waitlisted.
     const meResp = await apiPost(page, "/content/registrations/register", { churchId: CHURCH, eventId, personId: a.personId }, a);
     expect((await meResp.json()).status).toBe("waitlisted");
 

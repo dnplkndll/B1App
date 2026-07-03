@@ -38,8 +38,7 @@ interface Props {
   hideCoupon?: boolean;
 }
 
-// Inner form: runs inside the provider's Elements/context wrapper so the Stripe
-// instance is available for 3DS finalize via useStripeInstance().
+// Runs inside provider context so Stripe instance is available for 3DS finalize.
 const PaymentEntry: React.FC<{
   provider: any;
   gateway: PaymentGateway;
@@ -80,8 +79,7 @@ const PaymentEntry: React.FC<{
       if (useNew) {
         if (!entryRef.current) throw new Error(Locale.label("registration.payment.cardNotReady"));
         const token = await entryRef.current.tokenize();
-        // Gateways read the method id from `token`/`id` (server maps token->id); customerId
-        // scopes a saved method. paymentMethodId is only used by the KF numeric-id path.
+        // Gateways read method id from token/id; customerId scopes saved method; paymentMethodId for KF numeric-id path.
         payment = { provider: provider.key, gatewayId: gateway?.id, token: token.id, customerId: token.customerId, paymentMethodId: token.id, type: token.type };
       } else {
         const m = savedMethods.find((s) => s.id === selectedMethod);

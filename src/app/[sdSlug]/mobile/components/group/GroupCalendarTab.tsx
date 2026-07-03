@@ -30,8 +30,7 @@ interface RsvpBatchEntry {
   mine: RsvpResponse | null;
 }
 
-// Canonical local-time key so an occurrence matches its stored RSVP row regardless
-// of whether the server returns the datetime as UTC-Z or a naive local string.
+// Local-time key for RSVP matching regardless of server datetime format.
 const occKey = (d: Date) => {
   if (isNaN(d.getTime())) return "";
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -218,10 +217,7 @@ export const GroupCalendarTab = ({ groupId, canManage, isMember, onAddEvent, onE
   };
 
   const handleAddEvent = () => {
-    // `selected` is a "YYYY-MM-DD" string. `new Date("YYYY-MM-DD")` parses as
-    // UTC midnight, which after setHours(14) can land on the previous local
-    // day in negative-offset zones. Append a local-time component so the
-    // string is parsed in the local zone.
+    // Append T00:00:00 to parse as local time, not UTC (timezone gotcha).
     const base = selected ? new Date(`${selected}T00:00:00`) : new Date();
     if (!selected) base.setDate(base.getDate() + 1);
     base.setHours(14, 0, 0, 0);
