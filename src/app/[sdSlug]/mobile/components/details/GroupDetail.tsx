@@ -732,6 +732,7 @@ const AuthenticatedGroupDetail = ({ idOrSlug, config }: { idOrSlug: string; conf
             <GroupCalendarTab
               groupId={groupId}
               canManage={canManageGroup}
+              isMember={isMember}
               onAddEvent={(dateIso) => setCreateEvent(dateIso)}
               onEditEvent={(ev) => setEditEvent(ev)}
             />

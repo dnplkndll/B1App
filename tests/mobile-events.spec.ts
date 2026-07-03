@@ -33,6 +33,10 @@ test.describe("Mobile event registration", () => {
 
   test("clicking Continue advances from Info to Members step", async ({ page }) => {
     await page.goto("/mobile/register/EVT00000015");
+    // The seed now defines paid attendee types on VBS (Camper/Chaperone), so the
+    // Info step requires picking a registration type before Continue advances.
+    await page.getByTestId("primary-type").click();
+    await page.getByRole("option", { name: /Chaperone/i }).click();
     const continueBtn = page.locator("main").getByRole("button", { name: /Continue/i }).first();
     await continueBtn.waitFor({ state: "visible", timeout: 15000 });
     await continueBtn.click();

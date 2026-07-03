@@ -17,6 +17,7 @@ const TAB_ALIASES: Record<string, string> = {
 const KEEP_ALIVE_TABS = new Set([
   "dashboard",
   "more",
+  "me",
   "sermons",
   "groups",
   "community",
