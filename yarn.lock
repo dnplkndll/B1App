@@ -187,9 +187,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@churchapps/apphelper@npm:^0.21.1":
-  version: 0.21.1
-  resolution: "@churchapps/apphelper@npm:0.21.1"
+"@churchapps/apphelper@npm:^0.22.0":
+  version: 0.22.0
+  resolution: "@churchapps/apphelper@npm:0.22.0"
   dependencies:
     "@emotion/cache": "npm:^11.14.0"
     "@emotion/react": "npm:^11.14.0"
@@ -250,7 +250,7 @@ __metadata:
       optional: true
     react-google-recaptcha:
       optional: true
-  checksum: 10c0/99d79c19375fbaa68017f192c9460b2415ac977745169c93a0cc4da447b7aa905104bf3ff0a8bd34953153caef22f354139bad5cdeb78ebed6d197815613beeb
+  checksum: 10c0/24bb651d845e64f98f1a63d0d03b5cfc24c870a211a1b3676930365784a70b987da4c9ef9b0dc0d66561741393df34149be585bcda5821ea9c554c595a3dfc6e
   languageName: node
   linkType: hard
 
@@ -3232,26 +3232,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stripe/react-stripe-js@npm:^3.10.0":
-  version: 3.10.0
-  resolution: "@stripe/react-stripe-js@npm:3.10.0"
-  dependencies:
-    prop-types: "npm:^15.7.2"
-  peerDependencies:
-    "@stripe/stripe-js": ">=1.44.1 <8.0.0"
-    react: ">=16.8.0 <20.0.0"
-    react-dom: ">=16.8.0 <20.0.0"
-  checksum: 10c0/d7629436629571883e1ab44b1fdbdd5bc002c9020400bbad212caccddad5eaedefbdb171e970bd34276b72d9c23deac86d1e0898db11961de2a7e8951bf9711a
-  languageName: node
-  linkType: hard
-
-"@stripe/stripe-js@npm:^7.9.0":
-  version: 7.9.0
-  resolution: "@stripe/stripe-js@npm:7.9.0"
-  checksum: 10c0/ca7dd386df944ed05be115422dde9f5a2b04846e508f482d996db273d95bf8ac8ab5078e58480534b8bc6e29c26c67e16c7e75e478c3112813f971ec6aba49f8
-  languageName: node
-  linkType: hard
-
 "@swc/helpers@npm:0.5.15":
   version: 0.5.15
   resolution: "@swc/helpers@npm:0.5.15"
@@ -4160,7 +4140,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "b1-app@workspace:."
   dependencies:
-    "@churchapps/apphelper": "npm:^0.21.1"
+    "@churchapps/apphelper": "npm:^0.22.0"
     "@churchapps/content-providers": "npm:^0.5.1"
     "@churchapps/helpers": "npm:^1.10.1"
     "@emotion/react": "npm:^11.14.0"
@@ -4173,8 +4153,6 @@ __metadata:
     "@react-hook/window-size": "npm:^3.1.1"
     "@sentry/nextjs": "npm:^10.52.0"
     "@serwist/next": "npm:^9.5.11"
-    "@stripe/react-stripe-js": "npm:^3.10.0"
-    "@stripe/stripe-js": "npm:^7.9.0"
     "@tanstack/query-sync-storage-persister": "npm:^5.100.9"
     "@tanstack/react-query": "npm:^5.100.9"
     "@tanstack/react-query-persist-client": "npm:^5.100.9"
