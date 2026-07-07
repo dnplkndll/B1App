@@ -19,13 +19,13 @@ type Props = {
 export async function DefaultPageWrapper(props: Props) {
   const a = 0;
 
-  const footerSections = await ApiHelper.getAnonymous("/blocks/public/footer/" + props.config.church.id, "ContentApi");
+  const footerSections = await ApiHelper.getAnonymous("/blocks/public/footer/" + props.config.church.id + (props.config.siteId ? "?siteId=" + props.config.siteId : ""), "ContentApi");
 
   return (<>
     <CssBaseline />
     <div>
       <Header config={props.config} overlayContent={props.overlayContent} sections={[]} linkColor={props.linkColor} />
-      <main>
+      <main id="main-content">
         <div className="page">
           {!props.overlayContent && <div style={{ paddingTop: 90 }}></div>}
 

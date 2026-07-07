@@ -57,8 +57,6 @@ interface GroupWithExtras extends GroupInterface {
 
 type TabKey = "about" | "messages" | "members" | "attendance" | "events" | "resources" | "plans";
 
-const looksLikeId = (value: string) => /^[A-Za-z0-9_]+$/.test(value) && !value.includes("-");
-
 export const GroupDetail = ({ id, config }: Props) => {
   const isAuthenticated = !!UserHelper.user?.id;
 
@@ -70,9 +68,7 @@ export const GroupDetail = ({ id, config }: Props) => {
 };
 
 const AuthenticatedGroupDetail = ({ idOrSlug, config }: { idOrSlug: string; config: ConfigurationInterface }) => {
-  // `id` here is the URL param — could be a real group id or a slug. We use it
-  // for cache keys and the initial fetch, then derive the resolved `groupId`
-  // from the loaded group for all downstream API calls and child components.
+  // id is URL param (slug or real group id); derive resolved groupId from loaded group.
   const id = idOrSlug;
   const tc = mobileTheme.colors;
   const router = useRouter();
@@ -109,19 +105,28 @@ const AuthenticatedGroupDetail = ({ idOrSlug, config }: { idOrSlug: string; conf
 
   }, []);
 
+  const isValidGroup = (data: any): data is GroupWithExtras =>
+    !!data && typeof data === "object" && !!data.id;
+
   const { data: groupData, isLoading: groupLoading } = useQuery<GroupWithExtras | null>({
     queryKey: ["group-detail", id],
     queryFn: async () => {
-      if (looksLikeId(id)) {
-        const data = await ApiHelper.get(`/groups/${id}`, "MembershipApi");
-        if (data) return data;
-      }
-      // Slug, or id-shaped value that didn't resolve — fall back to public lookup
-      const url = looksLikeId(id)
-        ? `/groups/public/${churchId}/${id}`
-        : `/groups/public/${churchId}/slug/${id}`;
-      const publicData = await ApiHelper.get(url, "MembershipApi");
-      return publicData || null;
+      // `id` may be a real group id (shortIds can contain '-' or '_') or a slug, so
+      // we can't tell them apart by shape — try id forms first, then the slug lookup.
+      const authData = await ApiHelper.get(`/groups/${id}`, "MembershipApi");
+      if (isValidGroup(authData)) return authData;
+      const tryPublic = async (url: string) => {
+        try {
+          const d = await ApiHelper.get(url, "MembershipApi");
+          return isValidGroup(d) ? d : null;
+        } catch {
+          return null;
+        }
+      };
+      return (
+        (await tryPublic(`/groups/public/${churchId}/${id}`)) ||
+        (await tryPublic(`/groups/public/${churchId}/slug/${id}`))
+      );
     },
     enabled: !!id && !!churchId
   });
@@ -170,6 +175,13 @@ const AuthenticatedGroupDetail = ({ idOrSlug, config }: { idOrSlug: string; conf
   const hasPlans = (groupPlans?.length || 0) > 0;
 
   const group: GroupWithExtras | null | undefined = groupLoading ? undefined : (groupData ?? null);
+
+  React.useEffect(() => {
+    if (group === null) {
+      router.replace("/mobile/groups");
+    }
+  }, [group, router]);
+
   const members = membersData;
 
   const refreshMembers = () => queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
@@ -718,6 +730,7 @@ const AuthenticatedGroupDetail = ({ idOrSlug, config }: { idOrSlug: string; conf
             <GroupCalendarTab
               groupId={groupId}
               canManage={canManageGroup}
+              isMember={isMember}
               onAddEvent={(dateIso) => setCreateEvent(dateIso)}
               onEditEvent={(ev) => setEditEvent(ev)}
             />

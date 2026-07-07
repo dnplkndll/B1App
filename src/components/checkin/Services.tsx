@@ -80,7 +80,6 @@ export function Services({ selectedHandler }: Props) {
 
   return (
     <>
-      {/* Header Section */}
       <HeaderSection>
         <HeaderIconContainer>
           <Icon sx={{ fontSize: 48, color: colors.primary }}>event</Icon>
@@ -93,7 +92,6 @@ export function Services({ selectedHandler }: Props) {
         </Typography>
       </HeaderSection>
 
-      {/* Services List */}
       {services.length === 0
         ? (
           <EmptyStateCard>
@@ -110,36 +108,36 @@ export function Services({ selectedHandler }: Props) {
           services.map((service) => {
             const campusName = campuses.find((c) => c.id === service.campusId)?.name;
             return (
-            <CheckinCard key={service.id}>
-              <CardActionArea
-                onClick={() => selectService(service.id)}
-                data-testid={`select-service-${service.id}-button`}
-                sx={{ padding: 2, minHeight: 72 }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <IconCircle sx={{ marginRight: 2 }}>
-                    <Icon sx={{ fontSize: 28, color: colors.primary }}>church</Icon>
-                  </IconCircle>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" sx={{ color: colors.textPrimary, fontWeight: 600, marginBottom: 0.5 }}>
-                      {service.name}
-                    </Typography>
-                    {campusName && (
-                      <Typography variant="body2" sx={{ color: colors.primary, fontWeight: 500 }}>
-                        {campusName}
+              <CheckinCard key={service.id}>
+                <CardActionArea
+                  onClick={() => selectService(service.id)}
+                  data-testid={`select-service-${service.id}-button`}
+                  sx={{ padding: 2, minHeight: 72 }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <IconCircle sx={{ marginRight: 2 }}>
+                      <Icon sx={{ fontSize: 28, color: colors.primary }}>church</Icon>
+                    </IconCircle>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" sx={{ color: colors.textPrimary, fontWeight: 600, marginBottom: 0.5 }}>
+                        {service.name}
                       </Typography>
-                    )}
+                      {campusName && (
+                        <Typography variant="body2" sx={{ color: colors.primary, fontWeight: 500 }}>
+                          {campusName}
+                        </Typography>
+                      )}
+                    </Box>
+                    {selectingServiceId === service.id
+                      ? (
+                        <CircularProgress size={24} />
+                      )
+                      : (
+                        <Icon sx={{ color: colors.textSecondary }}>chevron_right</Icon>
+                      )}
                   </Box>
-                  {selectingServiceId === service.id
-                    ? (
-                      <CircularProgress size={24} />
-                    )
-                    : (
-                      <Icon sx={{ color: colors.textSecondary }}>chevron_right</Icon>
-                    )}
-                </Box>
-              </CardActionArea>
-            </CheckinCard>
+                </CardActionArea>
+              </CheckinCard>
             );
           })
         )}

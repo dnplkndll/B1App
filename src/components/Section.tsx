@@ -3,13 +3,14 @@
 import React, { CSSProperties, useState } from "react";
 import { ElementInterface, SectionInterface } from "@/helpers";
 import { Box, Container } from "@mui/material";
-import { DraggableWrapper, DroppableArea } from "@churchapps/apphelper/website";
+import { DraggableWrapper, DroppableArea, SectionDivider, parseDividerConfig } from "@churchapps/apphelper/website";
 import { Element } from "./Element";
 import { YoutubeBackground } from "./YoutubeBackground";
 import { ApiHelper } from "@churchapps/apphelper";
 import type { AppearanceInterface } from "@churchapps/apphelper";
 import type { ChurchInterface } from "@churchapps/helpers";
 import { StyleHelper } from "@churchapps/apphelper/website";
+import { b1ImageOptimizer } from "@/helpers/imageOptimizer";
 
 interface Props {
   first?: boolean,
@@ -23,6 +24,15 @@ interface Props {
 export const Section: React.FC<Props> = props => {
   const [isDragging, setIsDragging] = useState(false);
 
+  const getAnswers = (): Record<string, any> => {
+    if (props.section.answers) return props.section.answers as Record<string, any>;
+    if (props.section.answersJSON) { try { return JSON.parse(props.section.answersJSON); } catch { return {}; } }
+    return {};
+  };
+  const answers = getAnswers();
+  const dividerTop = parseDividerConfig(answers.dividerTop);
+  const dividerBottom = parseDividerConfig(answers.dividerBottom);
+  const hasDivider = !!(dividerTop || dividerBottom);
 
   const getElements = () => {
     const result: React.ReactElement[] = [];
@@ -38,7 +48,8 @@ export const Section: React.FC<Props> = props => {
     let result: CSSProperties = {};
     const bg = props.section.background;
     if (bg && bg.indexOf("/") > -1) {
-      result = { backgroundImage: "url('" + bg + "')" };
+      result = { backgroundImage: b1ImageOptimizer.background(bg) };
+      if (props.section.answers?.focalPoint) result.backgroundPosition = String(props.section.answers.focalPoint);
     } else if (bg) {
       result = { background: bg };
     }
@@ -48,11 +59,19 @@ export const Section: React.FC<Props> = props => {
     return result;
   };
 
+  const getVisibilityClasses = () => {
+    let result = "";
+    if (props.section.styles?.desktop?.display === "none") result += " hiddenOnDesktop";
+    if (props.section.styles?.mobile?.display === "none") result += " hiddenOnMobile";
+    return result;
+  };
+
   const getVideoClassName = () => {
     let result = "sectionVideo";
     if (props.section.textColor === "light") result += " sectionDark";
     if (props.first) result += " sectionFirst";
     if (props.onEdit) result += " sectionWrapper";
+    result += getVisibilityClasses();
     return result;
   };
 
@@ -63,6 +82,8 @@ export const Section: React.FC<Props> = props => {
     if (props.section.textColor === "light") result += " sectionDark";
     if (props.first) result += " sectionFirst";
     if (props.onEdit) result += " sectionWrapper";
+    if (hasDivider) result += " sectionWithDivider";
+    result += getVisibilityClasses();
 
     let hc = props.section.headingColor;
     if (hc) {
@@ -126,7 +147,7 @@ export const Section: React.FC<Props> = props => {
   if (sectionBg && sectionBg.indexOf("youtube:") > -1) {
     const youtubeId = sectionBg.split(":")[1];
     result = (<>{getSectionAnchor()}<YoutubeBackground isDragging={isDragging} id={getId()} videoId={youtubeId} overlay="rgba(0,0,0,.4)" contentClassName={getVideoClassName()}>{contents}</YoutubeBackground></>);
-  } else result = (<>{getSectionAnchor()}<Box component="div" sx={{ ":before": { opacity: (props.section.answers?.backgroundOpacity) ? props.section.answers.backgroundOpacity + " !important" : "" } }} style={getStyle()} className={getClassName()} id={getId()}>{contents}</Box></>);
+  } else result = (<>{getSectionAnchor()}<Box component="div" sx={{ ":before": { opacity: (props.section.answers?.backgroundOpacity) ? props.section.answers.backgroundOpacity + " !important" : "", background: props.section.answers?.overlayColor ? props.section.answers.overlayColor + " !important" : "" } }} style={getStyle()} className={getClassName()} id={getId()}>{dividerTop && <SectionDivider position="top" {...dividerTop} />}{dividerBottom && <SectionDivider position="bottom" {...dividerBottom} />}{contents}</Box></>);
 
   if (props.onEdit) {
     return (

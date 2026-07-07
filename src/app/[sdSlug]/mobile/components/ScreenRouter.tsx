@@ -23,12 +23,17 @@ const DonatePage = dynamic(() => import("./screens/DonatePage").then(m => ({ def
 const CheckinPage = dynamic(() => import("./screens/CheckinPage").then(m => ({ default: m.CheckinPage })), { loading });
 const PlansPage = dynamic(() => import("./screens/PlansPage").then(m => ({ default: m.PlansPage })), { loading });
 const RegistrationsPage = dynamic(() => import("./screens/RegistrationsPage").then(m => ({ default: m.RegistrationsPage })), { loading });
+const MePage = dynamic(() => import("./screens/MePage").then(m => ({ default: m.MePage })), { loading });
+const RequestEventPage = dynamic(() => import("./screens/RequestEventPage").then(m => ({ default: m.RequestEventPage })), { loading });
+const MyRequestsPage = dynamic(() => import("./screens/MyRequestsPage").then(m => ({ default: m.MyRequestsPage })), { loading });
 const VolunteerPage = dynamic(() => import("./screens/VolunteerPage").then(m => ({ default: m.VolunteerPage })), { loading });
 const NotificationsPage = dynamic(() => import("./screens/NotificationsPage").then(m => ({ default: m.NotificationsPage })), { loading });
+const NotificationPrefsPage = dynamic(() => import("./screens/NotificationPrefsPage").then(m => ({ default: m.NotificationPrefsPage })), { loading });
 const ProfileEditPage = dynamic(() => import("./screens/ProfileEditPage").then(m => ({ default: m.ProfileEditPage })), { loading });
 const WebsiteUrlPage = dynamic(() => import("./screens/WebsiteUrlPage").then(m => ({ default: m.WebsiteUrlPage })), { loading });
 const MessageComposePage = dynamic(() => import("./screens/MessageComposePage").then(m => ({ default: m.MessageComposePage })), { loading });
 const MobileLoginScreen = dynamic(() => import("./screens/LoginPage").then(m => ({ default: m.MobileLoginScreen })), { loading });
+const MoreCardsPage = dynamic(() => import("./screens/MoreCardsPage").then(m => ({ default: m.MoreCardsPage })), { loading });
 
 interface Props {
   pageSlug: string;
@@ -49,6 +54,7 @@ export function ScreenRouter({ pageSlug, config }: Props) {
 
   switch (effectiveSlug) {
     case "dashboard": return <DashboardPage config={config} />;
+    case "more": return <MoreCardsPage config={config} />;
     case "sermons": return <SermonsPage config={config} />;
     case "groups":
     case "myGroups": return <GroupsPage config={config} />;
@@ -62,7 +68,11 @@ export function ScreenRouter({ pageSlug, config }: Props) {
     case "votd": return <VotdPage />;
     case "bible": return <BiblePage />;
     case "notifications": return <NotificationsPage config={config} />;
+    case "notificationPrefs": return <NotificationPrefsPage />;
     case "registrations": return <RegistrationsPage config={config} />;
+    case "me": return <MePage config={config} />;
+    case "requestEvent": return <RequestEventPage config={config} />;
+    case "myRequests": return <MyRequestsPage config={config} />;
     case "volunteer":
     case "volunteerBrowse": return <VolunteerPage config={config} />;
     case "messages":

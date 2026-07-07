@@ -98,9 +98,6 @@ export const ChatNotificationBridge = ({ personId, churchId }: Props): null => {
           return;
         }
 
-        // When the device is enrolled for server-side web push, let the push path
-        // be the single source of OS notifications to avoid duplicate alerts from
-        // both the socket bridge and the service worker.
         if (WebPushHelper.isServerRegistrationEnabled()) {
           const hasConfirmedEnrollment = await WebPushHelper.hasConfirmedServerEnrollment();
           if (hasConfirmedEnrollment) return;
@@ -117,8 +114,8 @@ export const ChatNotificationBridge = ({ personId, churchId }: Props): null => {
 
         await registration.showNotification(message?.displayName || "New message", {
           body: message?.content || "You received a new private message.",
-          icon: "/images/logo.png",
-          badge: "/images/logo.png",
+          icon: "/images/logo-icon.png",
+          badge: "/images/logo-icon.png",
           tag: `privatemessage:${conversationId}`,
           data: {
             type: "privatemessage",

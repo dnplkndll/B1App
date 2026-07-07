@@ -95,7 +95,7 @@ export const GroupLeaderResources: React.FC<Props> = (props) => {
   const fileRows = files?.map((file) => (
     <TableRow key={file.id}>
       <TableCell>
-        <Link href={file.contentPath} target="_blank" data-testid={`leader-resource-file-${file.id}-link`}>
+        <Link href={file.contentPath} target="_blank" rel="noopener noreferrer" data-testid={`leader-resource-file-${file.id}-link`}>
           {file.fileName}
         </Link>
       </TableCell>
@@ -115,7 +115,7 @@ export const GroupLeaderResources: React.FC<Props> = (props) => {
   const linkRows = links?.map((link) => (
     <TableRow key={link.id}>
       <TableCell>
-        <Link href={link.url} target="_blank" data-testid={`leader-resource-link-${link.id}-link`}>
+        <Link href={link.url} target="_blank" rel="noopener noreferrer" data-testid={`leader-resource-link-${link.id}-link`}>
           {link.text}
         </Link>
       </TableCell>
@@ -169,14 +169,12 @@ export const GroupLeaderResources: React.FC<Props> = (props) => {
         )}
       </DisplayBox>
 
-      {/* Link Add */}
       <GroupLinkAdd
         saveCallback={() => { loadData(); }}
         groupId={props.groupId}
         forGroupLeader
       />
 
-      {/* File Upload */}
       <InputBox headerIcon="description" headerText={Locale.label("groups.upload")} saveFunction={handleSave} saveText={Locale.label("groups.upload")} data-testid="group-leader-upload-inputbox">
         {getStorage()}
         <p>{Locale.label("groups.storageInfo")}</p>

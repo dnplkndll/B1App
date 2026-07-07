@@ -1,9 +1,6 @@
 import { Locale } from "@churchapps/apphelper";
 
-// Most existing consumers read `mobileTheme.radius.lg` and `mobileTheme.shadows.md`
-// inside template literals (e.g. `borderRadius: \`${mobileTheme.radius.xl}px\``).
-// `radius` keeps its numeric type for backwards-compat; `radiusVar` exposes the
-// CSS-variable equivalent for new code that wants to inherit admin overrides.
+// `radius` is numeric for backwards-compat; `radiusVar` is CSS-variable for new code inheriting admin overrides.
 export const mobileTheme = {
   colors: {
     primary: "var(--mb-primary)",
@@ -79,6 +76,7 @@ export const SCREEN_TITLES: Record<string, string> = new Proxy({} as Record<stri
       volunteerBrowse: Locale.label("mobile.screenTitles.volunteerOpportunities"),
       volunteer: Locale.label("mobile.screenTitles.volunteer"),
       volunteerSignup: Locale.label("mobile.screenTitles.volunteer"),
+      notificationPrefs: "Notification Preferences",
       profileEdit: Locale.label("mobile.screenTitles.profileEdit"),
       stream: Locale.label("mobile.screenTitles.stream"),
       bible: Locale.label("mobile.screenTitles.bible"),
@@ -170,9 +168,7 @@ export const linkTypeToIcon = (linkType?: string, itemIcon?: string): string => 
   }
 };
 
-// Short purpose-driven tagline per link type for hero cards. Returning null
-// (default / generic types) lets callers omit the subtext line entirely
-// instead of falling back to the generic "Tap to explore".
+// Returning null lets callers omit the subtext line instead of using generic fallback.
 export const linkTypeToTagline = (linkType?: string): string | null => {
   switch ((linkType || "").toLowerCase()) {
     case "groups": return Locale.label("mobile.taglines.groups");

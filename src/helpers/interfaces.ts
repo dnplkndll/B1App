@@ -54,8 +54,23 @@ export interface PageInterface {
   url?: string;
   title?: string;
   layout?: string;
+  metaDescription?: string;
 
   sections?: SectionInterface[];
+}
+
+export interface PostInterface {
+  id?: string;
+  churchId?: string;
+  title?: string;
+  slug?: string;
+  excerpt?: string;
+  content?: string;
+  authorId?: string;
+  photoUrl?: string;
+  publishDate?: string;
+  category?: string;
+  tags?: string;
 }
 
 export interface BlockInterface {
@@ -273,4 +288,37 @@ export interface ExternalVenueRefInterface {
   studyId: string;
   lessonId: string;
   venueId: string;
+}
+
+// Mirrors @churchapps/helpers — switch to the package exports once >1.7.1 is published.
+export interface CampaignInterface {
+  id?: string;
+  name?: string;
+  description?: string;
+  goalAmount?: number;
+  startDate?: string;
+  endDate?: string;
+  allowSelfPledge?: boolean;
+}
+
+export interface PledgeInterface {
+  id?: string;
+  churchId?: string;
+  campaignId?: string;
+  personId?: string;
+  amount?: number;
+}
+
+export type PledgeStatus = "notStarted" | "inProgress" | "fulfilled" | "beyondPledged" | "nonPledged";
+
+export interface CampaignProgressInterface {
+  campaign?: CampaignInterface;
+  totalPledged?: number;
+  totalGiven?: number;
+}
+
+export interface MyPledgeInterface {
+  pledge?: PledgeInterface;
+  givenAmount?: number;
+  status?: PledgeStatus;
 }

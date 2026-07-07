@@ -1,7 +1,6 @@
 "use client";
 
 import React, { Suspense, useContext, useEffect, useMemo, useState } from "react";
-import { loadStripe, Stripe } from "@stripe/stripe-js";
 import {
   Box,
   Button,
@@ -26,15 +25,18 @@ import {
 import {
   RecurringDonations,
   PaymentMethods,
-  StripePaymentMethod as AppHelperStripePaymentMethod
+  SavedPaymentMethod,
+  MultiGatewayDonationForm,
+  getPaymentProvider
 } from "@churchapps/apphelper/donations";
+import type { PaymentGateway } from "@churchapps/apphelper/donations";
 import { NonAuthDonationWrapper } from "@churchapps/apphelper/website";
 import type {
   ChurchInterface,
   DonationInterface,
   PersonInterface
 } from "@churchapps/helpers";
-import { StableDonationForm } from "@/components/donate/StableDonationForm";
+import { CampaignProgress } from "@/components/donate/CampaignProgress";
 import UserContext from "@/context/UserContext";
 import { ConfigurationInterface } from "@/helpers/ConfigHelper";
 import { mobileTheme } from "../mobileTheme";
@@ -81,43 +83,44 @@ function DonatePageInner({ config }: Props) {
   });
 
   interface PaymentData {
-    stripePromise: Promise<Stripe> | null;
-    paymentMethods: AppHelperStripePaymentMethod[];
+    paymentMethods: SavedPaymentMethod[];
     customerId: string | null;
     person: PersonInterface | null;
     currency: string;
+    paymentGateways: PaymentGateway[];
   }
 
   const { data: paymentData, isLoading: isMethodsLoading } = useQuery<PaymentData>({
     queryKey: ["donate-payment-data", personId],
     queryFn: async () => {
-      const gateways: { publicKey?: string; currency?: string }[] = await ApiHelper.get("/gateways", "GivingApi");
-      if (!gateways?.length || !gateways[0]?.publicKey) {
-        return { stripePromise: null, paymentMethods: [], customerId: null, person: null, currency: "usd" };
+      const gateways: PaymentGateway[] = await ApiHelper.get("/gateways", "GivingApi");
+      if (!gateways?.length) {
+        return { paymentMethods: [], customerId: null, person: null, currency: "usd", paymentGateways: [] };
       }
-      const stripePromise = loadStripe(gateways[0].publicKey!) as Promise<Stripe>;
       const [methodsResult, personResult] = await Promise.all([
         ApiHelper.get("/paymentmethods/personid/" + personId, "GivingApi") as Promise<{ provider?: string; customerId?: string }[]>,
         ApiHelper.get("/people/" + personId, "MembershipApi") as Promise<PersonInterface>
       ]);
-      const pms: AppHelperStripePaymentMethod[] = [];
+      const pms: SavedPaymentMethod[] = [];
       let customerId: string | null = null;
       if (Array.isArray(methodsResult)) {
         for (const pm of methodsResult) {
-          if (pm.provider === "stripe") pms.push(new AppHelperStripePaymentMethod(pm));
+          if (getPaymentProvider(pm.provider).capabilities.savedCard) pms.push(new SavedPaymentMethod(pm));
           if (pm.customerId && !customerId) customerId = pm.customerId;
         }
       }
-      return { stripePromise, paymentMethods: pms, customerId, person: personResult || null, currency: gateways[0].currency || "usd" };
+      return { paymentMethods: pms, customerId, person: personResult || null, currency: gateways[0].currency || "usd", paymentGateways: gateways };
     },
-    enabled: donationsEnabled
+    enabled: donationsEnabled,
+    // Always refetch on mount — never serve stale financial state.
+    staleTime: 0
   });
 
-  const stripePromise = paymentData?.stripePromise ?? null;
   const paymentMethods = paymentData?.paymentMethods ?? null;
   const customerId = paymentData?.customerId ?? null;
   const person = paymentData?.person ?? null;
   const pageCurrency = paymentData?.currency ?? "usd";
+  const paymentGateways = paymentData?.paymentGateways ?? [];
 
   const { data: subscriptions = [] } = useQuery<SubscriptionRow[]>({
     queryKey: ["donate-subscriptions", customerId],
@@ -264,6 +267,12 @@ function DonatePageInner({ config }: Props) {
             </>
           )}
         </Box>
+
+        {church?.id && (
+          <Box sx={{ mb: `${mobileTheme.spacing.lg}px` }}>
+            <CampaignProgress churchId={church.id} isAuthenticated={isAuthenticated} currency={pageCurrency} />
+          </Box>
+        )}
 
         {isAuthenticated && (
           <Box sx={{ mb: `${mobileTheme.spacing.lg}px` }}>
@@ -443,11 +452,11 @@ function DonatePageInner({ config }: Props) {
           p: `${mobileTheme.spacing.md}px`
         }}
       >
-        <StableDonationForm
+        <MultiGatewayDonationForm
           person={person!}
           customerId={customerId!}
-          paymentMethods={paymentMethods!}
-          stripePromise={stripePromise!}
+          paymentMethods={paymentMethods || []}
+          paymentGateways={paymentGateways}
           donationSuccess={handleDataUpdate}
           church={church!}
           churchLogo={churchLogo}
@@ -478,7 +487,6 @@ function DonatePageInner({ config }: Props) {
           customerId={customerId!}
           paymentMethods={paymentMethods || []}
           appName="B1App"
-          stripePromise={stripePromise!}
           dataUpdate={handleDataUpdate}
         />
       </Box>

@@ -2,7 +2,7 @@ import { ApiHelper } from "@churchapps/apphelper";
 import type { ChurchInterface, LinkInterface } from "@churchapps/helpers";
 import type { AppearanceInterface } from "@churchapps/apphelper";
 import { GlobalStyleInterface, PageInterface } from "./interfaces";
-import { startTransition } from "react";
+import { cache, startTransition } from "react";
 import { revalidate } from "@/app/actions";
 
 export interface ColorsInterface { primary: string, contrast: string, header: string }
@@ -11,7 +11,20 @@ export interface ButtonInterface { text: string, url: string }
 export interface ServiceInterface { videoUrl: string, serviceTime: string, duration: string, earlyStart: string, chatBefore: string, chatAfter: string, provider: string, providerKey: string, localCountdownTime?: Date, localStartTime?: Date, localEndTime?: Date, localChatStart?: Date, localChatEnd?: Date, label: string }
 export interface AppThemeModeColors { background: string, surface: string, primary: string, primaryContrast: string, secondary: string, textColor: string }
 export interface AppThemeConfig { light: AppThemeModeColors, dark: AppThemeModeColors }
-export interface ConfigurationInterface { keyName?: string, navLinks?: LinkInterface[], church: ChurchInterface, appearance: AppearanceInterface, allowDonations:boolean, hasWebsite:boolean, globalStyles:GlobalStyleInterface, homePage?: PageInterface, appTheme?: AppThemeConfig }
+export interface ConfigurationInterface { keyName?: string, siteId?: string, navLinks?: LinkInterface[], church: ChurchInterface, appearance: AppearanceInterface, allowDonations:boolean, hasWebsite:boolean, globalStyles:GlobalStyleInterface, homePage?: PageInterface, appTheme?: AppThemeConfig }
+
+// Prod caches config for 5 min; dev/test fetch fresh so content/style edits show immediately.
+const CONFIG_REVALIDATE_SECONDS = process.env.NODE_ENV === "production" ? 300 : 0;
+
+
+export const fetchCached = async <T>(path: string, apiName: string, tag: string): Promise<T> => {
+  const apiConfig = ApiHelper.getConfig(apiName);
+  if (!apiConfig) throw new Error("Unconfigured API: " + apiName);
+  const url = apiConfig.url + path;
+  const response = await fetch(url, { next: { revalidate: CONFIG_REVALIDATE_SECONDS, tags: [tag] } } as RequestInit);
+  if (!response.ok) throw new Error(response.status + " " + response.statusText + " for " + url);
+  return response.json();
+};
 
 export class ConfigHelper {
 
@@ -21,34 +34,36 @@ export class ConfigHelper {
     });
   }
 
-  static async load(keyName: string, navCategory:string = "b1Tab") {
+
+  static load = cache(async (keyName: string, navCategory: string = "b1Tab"): Promise<ConfigurationInterface> => {
     // Without a subdomain the lookup hits //churches/lookup/ and 404s (Sentry B1-APP-95/94).
     if (!keyName) throw new Error("ConfigHelper.load called without a church subdomain");
-    // NOTE: ApiHelper.getAnonymous never supported a cache-tags argument; the old third
-    // argument was silently ignored, so the revalidate(sdKey) tag invalidation in clearCache
-    // has never been wired to these fetches.
-    const church: ChurchInterface = await ApiHelper.getAnonymous("/churches/lookup/?subDomain=" + keyName, "MembershipApi");
-    const appearance = await ApiHelper.getAnonymous("/settings/public/" + church.id, "MembershipApi");
-    const tabs: LinkInterface[] = await ApiHelper.getAnonymous("/links/church/" + church.id + "?category=" + navCategory, "ContentApi");
-    const homePage: PageInterface = await ApiHelper.getAnonymous("/pages/" + church.id + "/tree?url=/", "ContentApi");
-    const gatewayConfigured = await ApiHelper.getAnonymous("/gateways/configured/" + church.id, "GivingApi");
-    const globalStyles: GlobalStyleInterface = await ApiHelper.getAnonymous("/globalStyles/church/" + church.id, "ContentApi");
+    const church: ChurchInterface = await fetchCached("/churches/lookup/?subDomain=" + keyName, "MembershipApi", keyName);
+    const siteId = (church as any).siteId || "";
+    const [appearance, tabs, homePage, gatewayConfigured, globalStyles] = await Promise.all([
+      fetchCached<AppearanceInterface>("/settings/public/" + church.id, "MembershipApi", keyName),
+      fetchCached<LinkInterface[]>("/links/church/" + church.id + "?category=" + navCategory + (siteId ? "&siteId=" + siteId : ""), "ContentApi", keyName),
+      fetchCached<PageInterface>("/pages/" + church.id + "/tree?url=/" + (siteId ? "&siteId=" + siteId : ""), "ContentApi", keyName),
+      fetchCached<{ configured?: boolean }>("/gateways/configured/" + church.id, "GivingApi", keyName),
+      fetchCached<GlobalStyleInterface>("/globalStyles/church/" + church.id + (siteId ? "?siteId=" + siteId : ""), "ContentApi", keyName)
+    ]);
     let appTheme: AppThemeConfig | undefined;
     try {
-      if (appearance?.appTheme) {
-        const themeData = typeof appearance.appTheme === "string" ? JSON.parse(appearance.appTheme) : appearance.appTheme;
+      const rawTheme = (appearance as any)?.appTheme;
+      if (rawTheme) {
+        const themeData = typeof rawTheme === "string" ? JSON.parse(rawTheme) : rawTheme;
         if (themeData && themeData.light) appTheme = themeData;
       }
     } catch { /* no app theme configured */ }
 
-    // Check if gateway is properly configured with a valid privateKey
-    // This prevents showing the donate tab when no payment gateway is set up
+    // Prevents showing donate tab without a configured gateway.
     const allowDonations = gatewayConfigured?.configured === true;
 
     const result: ConfigurationInterface = { appearance: appearance, church: church, navLinks: tabs, allowDonations, hasWebsite: Boolean(homePage?.url), globalStyles, homePage, appTheme };
     result.keyName = keyName;
+    result.siteId = siteId;
     return result;
-  }
+  });
 
   static getFirstRoute(config: ConfigurationInterface) {
     if (!config.navLinks || config.navLinks.length === 0) {

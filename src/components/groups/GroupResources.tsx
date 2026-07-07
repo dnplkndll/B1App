@@ -101,7 +101,7 @@ export const GroupResources: React.FC<Props> = (props) => {
   const fileRows = files?.map((file) => (
     <TableRow key={file.id}>
       <TableCell>
-        <Link href={file.contentPath} target="_blank" data-testid={`resource-file-${file.id}-link`}>
+        <Link href={file.contentPath} target="_blank" rel="noopener noreferrer" data-testid={`resource-file-${file.id}-link`}>
           {file.fileName}
         </Link>
       </TableCell>
@@ -124,7 +124,7 @@ export const GroupResources: React.FC<Props> = (props) => {
   const linkRows = links?.map((link) => (
     <TableRow key={link.id}>
       <TableCell>
-        <Link href={link.url} target="_blank" data-testid={`resource-link-${link.id}-link`}>
+        <Link href={link.url} target="_blank" rel="noopener noreferrer" data-testid={`resource-link-${link.id}-link`}>
           {link.text}
         </Link>
       </TableCell>
@@ -181,7 +181,6 @@ export const GroupResources: React.FC<Props> = (props) => {
         )}
       </DisplayBox>
 
-      {/* Link Add */}
       {canEditGroupResources && (
         <GroupLinkAdd
           saveCallback={() => { loadData(); }}
@@ -189,7 +188,6 @@ export const GroupResources: React.FC<Props> = (props) => {
         />
       )}
 
-      {/* File Upload */}
       {canEditGroupResources && (
         <InputBox headerIcon="description" headerText={Locale.label("groups.upload")} saveFunction={handleSave} saveText={Locale.label("groups.upload")} data-testid="group-upload-inputbox">
           {getStorage()}

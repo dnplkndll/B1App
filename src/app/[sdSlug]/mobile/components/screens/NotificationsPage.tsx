@@ -9,7 +9,7 @@ import UserContext from "@/context/UserContext";
 import { ConfigurationInterface } from "@/helpers/ConfigHelper";
 import { WebPushHelper } from "@/helpers";
 import { mobileTheme } from "../mobileTheme";
-import { formatRelative } from "../util";
+import { formatRelative, deriveNotificationUrl, getNotificationIcon } from "../util";
 import { useNotificationDiagnostics } from "../../hooks/useNotificationDiagnostics";
 
 interface NotificationItem {
@@ -27,35 +27,6 @@ interface NotificationItem {
 interface Props {
   config?: ConfigurationInterface;
 }
-
-const deriveLinkUrl = (n: NotificationItem): string | undefined => {
-  if (!n.contentId) return undefined;
-  const type = String(n.contentType || "").toLowerCase();
-  const id = n.contentId;
-  switch (type) {
-    case "plan":
-    case "schedule": return `/mobile/plans/${id}`;
-    case "groupannouncement": return `/mobile/groups/${id}?openChat=1&chatTab=announcements`;
-    case "group": return `/mobile/groups/${id}`;
-    case "assignment": return "/mobile/plans";
-    default: return undefined;
-  }
-};
-
-const getIconName = (contentType?: string): string => {
-  switch (String(contentType || "").toLowerCase()) {
-    case "plan":
-    case "schedule": return "calendar_today";
-    case "message":
-    case "privatemessage":
-    case "senttext": return "message";
-    case "group":
-    case "groupannouncement": return "group";
-    case "assignment": return "assignment";
-    case "donation": return "payment";
-    default: return "notifications";
-  }
-};
 
 export const NotificationsPage = ({ config }: Props) => {
   const tc = mobileTheme.colors;
@@ -105,7 +76,7 @@ export const NotificationsPage = ({ config }: Props) => {
   }, [loggedIn, serverNotifications]);
 
   const handleClick = (n: NotificationItem) => {
-    const href = deriveLinkUrl(n);
+    const href = deriveNotificationUrl(n);
     if (!href) return;
     if (href.startsWith("http")) {
       window.location.href = href;
@@ -142,9 +113,9 @@ export const NotificationsPage = ({ config }: Props) => {
   };
 
   const renderRow = (n: NotificationItem, idx: number) => {
-    const href = deriveLinkUrl(n);
+    const href = deriveNotificationUrl(n);
     const body = n.message || "";
-    const iconName = getIconName(n.contentType);
+    const iconName = getNotificationIcon(n.contentType);
     return (
       <Box
         key={n.id || `n-${idx}`}
@@ -289,6 +260,30 @@ export const NotificationsPage = ({ config }: Props) => {
     </Box>
   );
 
+  const renderPrefsLink = () => (
+    <Box
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push("/mobile/notificationPrefs")}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/mobile/notificationPrefs"); } }}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        bgcolor: tc.surface,
+        borderRadius: "12px",
+        boxShadow: mobileTheme.shadows.sm,
+        p: "12px 16px",
+        cursor: "pointer",
+        "&:hover": { boxShadow: mobileTheme.shadows.md }
+      }}
+    >
+      <Icon sx={{ color: tc.primary }}>tune</Icon>
+      <Typography sx={{ flex: 1, fontSize: 14, fontWeight: 600, color: tc.text }}>Notification Preferences</Typography>
+      <Icon sx={{ color: tc.disabled, fontSize: 20 }}>chevron_right</Icon>
+    </Box>
+  );
+
   const renderPushCard = () => {
     if (!loggedIn || diagnostics.permission === "unsupported") return null;
     const on = diagnostics.hasSubscription && (!diagnostics.serverRegistrationEnabled || diagnostics.hasConfirmedServerEnrollment);
@@ -319,11 +314,11 @@ export const NotificationsPage = ({ config }: Props) => {
               ? "Blocked in browser settings"
               : installRequired
                 ? (diagnostics.statusReason || "Install this app to finish notification setup on this device")
-              : pendingRegistration
-                ? (diagnostics.statusReason || "Permission is granted, but this device still needs registration")
-              : on
-                ? "You'll get alerts on this device"
-                : "Turn on to get alerts on this device"}
+                : pendingRegistration
+                  ? (diagnostics.statusReason || "Permission is granted, but this device still needs registration")
+                  : on
+                    ? "You'll get alerts on this device"
+                    : "Turn on to get alerts on this device"}
           </Typography>
         </Box>
         {!blocked && (
@@ -339,6 +334,7 @@ export const NotificationsPage = ({ config }: Props) => {
     <Box sx={{ p: `${mobileTheme.spacing.md}px`, bgcolor: tc.background, minHeight: "100%" }}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {renderPushCard()}
+        {loggedIn && renderPrefsLink()}
         {notifications && notifications.length > 0 && (
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button

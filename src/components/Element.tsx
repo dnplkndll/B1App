@@ -2,11 +2,12 @@
 
 import React from "react";
 import { Locale } from "@churchapps/apphelper";
-import { Element as AppHelperElement, ElementBlock } from "@churchapps/apphelper/website";
+import { Element as AppHelperElement, ElementBlock, registerElementRenderer, setImageOptimizer } from "@churchapps/apphelper/website";
 import type { ChurchInterface } from "@churchapps/helpers";
 import { ElementInterface, SectionInterface } from "@/helpers";
 import { LiveStream } from "./video/LiveStream";
 import { FormElement } from "./elements/FormElement";
+import { b1ImageOptimizer } from "@/helpers/imageOptimizer";
 
 interface Props {
   element: ElementInterface;
@@ -29,14 +30,16 @@ const StreamElement: React.FC<{ element: ElementInterface; churchSettings: any; 
   return <LiveStream includeHeader={false} includeInteraction={includeInteraction} keyName={props.church.subDomain || ""} appearance={props.churchSettings} offlineContent={offlineContent} />;
 };
 
-export const Element: React.FC<Props> = (props) => {
-  if (props.element.elementType === "stream" && props.church) {
-    return <StreamElement element={props.element} churchSettings={props.churchSettings} church={props.church} editMode={!!props.onEdit} />;
-  }
+// B1App-specific renderers registered as registry overrides; they win over the
+// apphelper defaults regardless of module load order.
+registerElementRenderer("stream", (p) => p.church
+  ? <StreamElement element={p.element as ElementInterface} churchSettings={p.churchSettings} church={p.church} editMode={!!p.onEdit} />
+  : null);
+registerElementRenderer("form", (p) => p.church
+  ? <FormElement element={p.element as ElementInterface} church={p.church} />
+  : null);
 
-  if (props.element.elementType === "form" && props.church) {
-    return <FormElement element={props.element} church={props.church} />;
-  }
+// Route apphelper content images through the Next.js image optimizer (srcset/WebP/AVIF).
+setImageOptimizer(b1ImageOptimizer);
 
-  return <AppHelperElement {...props} />;
-};
+export const Element: React.FC<Props> = (props) => <AppHelperElement {...props} />;

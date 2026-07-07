@@ -1,3 +1,4 @@
+import "material-icons/iconfont/filled.css";
 import "react-activity/dist/Dots.css";
 import "@/styles/vendor/pages.css";
 import "@/styles/member.css";
@@ -8,18 +9,27 @@ import "@/styles/master-detail.css";
 import ClientLayout from "@/app/ClientLayout";
 import { PwaRegister } from "../mobile/PwaRegister";
 import { loadChurchAppearance } from "../mobile/loadChurchAppearance";
+import { SiteWidgets } from "@/components/SiteWidgets";
+import { ChurchAnalytics } from "@/components/ChurchAnalytics";
+import { EnvironmentHelper } from "@/helpers/EnvironmentHelper";
+import { fetchCached } from "@/helpers/ConfigHelper";
 
 type LayoutParams = Promise<{ sdSlug: string }>;
 
-export const metadata = { robots: { index: false, follow: false } };
+export const viewport = { themeColor: "#ffffff" };
 
-export async function generateViewport({ params }: { params: LayoutParams }) {
-  const { sdSlug } = await params;
-
-  return { themeColor: "#ffffff" };
+async function loadSiteSettings(sdSlug: string, churchId?: string): Promise<{ announcementRaw?: string; launcherRaw?: string; ga4MeasurementId?: string }> {
+  if (!churchId) return {};
+  EnvironmentHelper.init();
+  try {
+    const settings = await fetchCached<{ announcementBanner?: string; launcher?: string; ga4MeasurementId?: string }>("/settings/public/" + churchId, "ContentApi", sdSlug);
+    return { announcementRaw: settings?.announcementBanner, launcherRaw: settings?.launcher, ga4MeasurementId: settings?.ga4MeasurementId };
+  } catch {
+    return {};
+  }
 }
 
-export default async function MobileLayout({
+export default async function PublicLayout({
   children,
   params
 }: {
@@ -27,7 +37,8 @@ export default async function MobileLayout({
   params: LayoutParams;
 }) {
   const { sdSlug } = await params;
-  const { churchName } = await loadChurchAppearance(sdSlug);
+  const { churchId, churchName } = await loadChurchAppearance(sdSlug);
+  const { announcementRaw, launcherRaw, ga4MeasurementId } = await loadSiteSettings(sdSlug, churchId);
 
   const appTitle = (churchName && churchName.trim()) || sdSlug || "Church";
   const iconUrl = "/mobile/icon/192";
@@ -35,6 +46,9 @@ export default async function MobileLayout({
 
   return (
     <>
+      <a href="#main-content" className="skipLink">Skip to content</a>
+      <SiteWidgets announcementRaw={announcementRaw} launcherRaw={launcherRaw} />
+      <ChurchAnalytics measurementId={ga4MeasurementId} />
       <link rel="manifest" href={`/manifest.webmanifest?church=${encodeURIComponent(sdSlug)}`} />
       <link rel="apple-touch-icon" href={iconUrl} />
       <link rel="apple-touch-icon" sizes="192x192" href={iconUrl} />
@@ -45,7 +59,6 @@ export default async function MobileLayout({
       <meta name="apple-mobile-web-app-title" content={appTitle} />
       <link rel="preconnect" href="https://content.churchapps.org" />
       <link rel="preconnect" href="https://content.lessons.church" />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
       <PwaRegister />
       <ClientLayout>{children}</ClientLayout>
     </>

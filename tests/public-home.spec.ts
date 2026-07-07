@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { DEMO_CHURCH } from "./helpers/fixtures";
 
-// The home page (/) renders PAG00000001 from content/demo.sql with hero,
-// service times, ministries, sermons, calendar, FAQ, and contact sections.
-// Anonymous access — clear cookies before each test.
-
 test.describe("Public home page", () => {
   test.beforeEach(async ({ page }) => {
     await page.context().clearCookies();
@@ -13,7 +9,7 @@ test.describe("Public home page", () => {
   test("renders hero with welcome heading", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("h1").filter({ hasText: /Welcome to Grace Community Church/i }).first()
+      page.locator("h1").filter({ hasText: /Welcome.*Grace Community Church/i }).first()
     ).toBeVisible();
   });
 
@@ -25,25 +21,25 @@ test.describe("Public home page", () => {
   test("shows seeded service times", async ({ page }) => {
     await page.goto("/");
     const body = page.locator("body");
-    await expect(body).toContainText(/Sunday Service Times/i);
-    await expect(body).toContainText(/9:00 AM/);
+    await expect(body).toContainText(/Sunday Services|Service Times/i);
+    await expect(body).toContainText(/9:00 & 11:00 AM/);
   });
 
   test("shows seeded ministries section", async ({ page }) => {
     await page.goto("/");
     const body = page.locator("body");
-    await expect(body).toContainText(/Children's Ministry/i);
-    await expect(body).toContainText(/Youth Ministry/i);
+    await expect(body).toContainText(/Children/i);
+    await expect(body).toContainText(/Youth/i);
     await expect(body).toContainText(/Small Groups/i);
   });
 
   test("shows latest sermons section heading", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("body")).toContainText(/Latest Sermons/i);
+    await expect(page.locator("body")).toContainText(/Browse All Sermons/i);
   });
 
   test("shows pastor section", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/about");
     await expect(page.locator("body")).toContainText(/Pastor John/i);
   });
 

@@ -20,9 +20,11 @@ import {
 import { ApiHelper, EventHelper, Locale } from "@churchapps/apphelper";
 import type { EventExceptionInterface, EventInterface } from "@churchapps/helpers";
 import { mobileTheme } from "../mobileTheme";
-import { RRuleEditor } from "../../../../../components/eventCalendar/RRuleEditor";
+import { RRuleEditor } from "@churchapps/apphelper/website";
 import { EditRecurringModal } from "../../../../../components/eventCalendar/EditRecurringModal";
 import { MarkdownEditor } from "@churchapps/apphelper/markdown";
+import { EventReminderEdit } from "./EventReminderEdit";
+import { BookingPicker, diffBookings, emptyBookingSelection, type BookingSelection } from "./BookingPicker";
 
 interface Props {
   open: boolean;
@@ -105,9 +107,12 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
   const [registrationOpenDate, setRegistrationOpenDate] = React.useState("");
   const [registrationCloseDate, setRegistrationCloseDate] = React.useState("");
   const [tags, setTags] = React.useState("");
+  const [allowRsvps, setAllowRsvps] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [recurrenceModalType, setRecurrenceModalType] = React.useState<"save" | "delete" | "">("");
+  const [booking, setBooking] = React.useState<BookingSelection>(emptyBookingSelection());
+  const [notice, setNotice] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (open) {
@@ -128,8 +133,43 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
       setRegistrationOpenDate(d.registrationOpenDate);
       setRegistrationCloseDate(d.registrationCloseDate);
       setTags(d.tags);
+      setAllowRsvps(!((eventProp as any)?.rsvpDisabled ?? false));
     }
-  }, [open, computeDefaults]);
+  }, [open, computeDefaults, eventProp]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    setNotice(null);
+    if (eventProp?.id) {
+      ApiHelper.get("/eventBookings/event/" + eventProp.id, "ContentApi").then((bk: any[]) => {
+        setBooking({
+          ...emptyBookingSelection(),
+          roomIds: (bk || []).filter((b) => b.roomId).map((b) => b.roomId),
+          resourceIds: (bk || []).filter((b) => b.resourceId).map((b) => b.resourceId)
+        });
+      }).catch(() => setBooking(emptyBookingSelection()));
+    } else {
+      setBooking(emptyBookingSelection());
+    }
+  }, [open, eventProp]);
+
+  // Diff selected rooms/resources against existing bookings: POST new, DELETE removed.
+  const syncBookings = async (eventId: string): Promise<any[]> => {
+    if (!eventId) return [];
+    const existing: any[] = eventProp?.id ? await ApiHelper.get("/eventBookings/event/" + eventId, "ContentApi").catch((): any[] => []) : [];
+    const { toAdd, toRemove } = diffBookings(eventId, booking, existing);
+    let saved: any[] = [];
+    if (toAdd.length) saved = await ApiHelper.post("/eventBookings", toAdd, "ContentApi");
+    for (const b of toRemove) await ApiHelper.delete("/eventBookings/" + b.id, "ContentApi");
+    return saved;
+  };
+
+  // Tells the member the outcome and only closes if nothing is left pending.
+  const finishBookings = (saved: any[]) => {
+    onSaved?.();
+    if ((saved || []).some((b) => b.status === "pending")) setNotice(Locale.label("mobile.group.bookingPending"));
+    else onClose();
+  };
 
   const buildPayload = (): EventInterface => {
     const parsedCapacity = capacity.trim() ? parseInt(capacity, 10) : undefined;
@@ -149,6 +189,8 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
       registrationCloseDate: registrationEnabled && registrationCloseDate ? (localToIsoString(registrationCloseDate) as unknown as Date) : undefined,
       tags: registrationEnabled ? (tags.trim() || undefined) : undefined
     };
+    // Explicit boolean (both directions) to sidestep the Kysely-drops-undefined trap.
+    (payload as any).rsvpDisabled = !allowRsvps;
     return payload;
   };
 
@@ -164,9 +206,9 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
     setSaving(true);
     setError(null);
     try {
-      await ApiHelper.post("/events", [buildPayload()], "ContentApi");
-      onSaved?.();
-      onClose();
+      const saved = await ApiHelper.post("/events", [buildPayload()], "ContentApi");
+      const bookings = await syncBookings(saved?.[0]?.id);
+      finishBookings(bookings);
     } catch (e: any) {
       setError(e?.message || Locale.label("mobile.group.failedToSaveEvent"));
     } finally {
@@ -179,8 +221,8 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
     setError(null);
     try {
       await ApiHelper.post("/events", [buildPayload()], "ContentApi");
-      onSaved?.();
-      onClose();
+      const bookings = await syncBookings(eventProp!.id);
+      finishBookings(bookings);
     } catch (e: any) {
       setError(e?.message || Locale.label("mobile.group.failedToSaveEvent"));
     } finally {
@@ -247,8 +289,10 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
         case "all": {
           const allEv: EventInterface = { ...ev, recurrenceRule: recurring ? rRule : "" };
           await ApiHelper.post("/events", [allEv], "ContentApi");
+          await syncBookings(eventProp.id);
           break;
         }
+        // ponytail: "this"/"future" spawn new event rows; bookings stay on the original series only.
         default:
           setRecurrenceModalType("");
           setSaving(false);
@@ -304,7 +348,7 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
 
   const handleToggleRecurring = (checked: boolean) => {
     setRecurring(checked);
-    if (checked && !rRule) setRRule("FREQ=DAILY;INTERVAL=1");
+    if (checked && !rRule) setRRule("FREQ=WEEKLY;INTERVAL=1");
     if (!checked) setRRule("");
   };
 
@@ -397,6 +441,20 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
             <MenuItem value="public">{Locale.label("mobile.group.public")}</MenuItem>
             <MenuItem value="private">{Locale.label("mobile.group.membersOnly")}</MenuItem>
           </TextField>
+          <BookingPicker
+            value={booking}
+            onChange={setBooking}
+            start={start}
+            end={end}
+            recurring={recurring}
+            rRule={rRule}
+            eventId={eventProp?.id}
+          />
+          {notice && <Typography sx={{ color: tc.primary, fontSize: 13 }}>{notice}</Typography>}
+          <FormControlLabel
+            control={<Switch checked={allowRsvps} onChange={(e) => setAllowRsvps(e.target.checked)} />}
+            label={Locale.label("mobile.group.allowRsvps")}
+          />
           <FormControlLabel
             control={<Switch checked={recurring} onChange={(e) => handleToggleRecurring(e.target.checked)} />}
             label={Locale.label("mobile.group.recurring")}
@@ -454,6 +512,9 @@ export const CreateEventModal = ({ open, groupId, initialDateIso, event: eventPr
                 />
               </Box>
             </Box>
+          )}
+          {isEdit && eventProp?.id && (
+            <EventReminderEdit eventId={eventProp.id} hasRegistration={registrationEnabled} />
           )}
           {error && <Typography sx={{ color: tc.error, fontSize: 13 }}>{error}</Typography>}
         </DialogContent>
