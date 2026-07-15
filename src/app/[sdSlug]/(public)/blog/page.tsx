@@ -30,6 +30,8 @@ const formatDate = (value?: string) => {
   return isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 };
 
+const excerptOf = (post: PostInterface) => post.excerpt || (post.content || "").replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[#>*_`~]/g, "").replace(/\s+/g, " ").trim().slice(0, 160);
+
 const buildQuery = (params: { page?: number; category?: string; tag?: string }) => {
   const qs = new URLSearchParams();
   if (params.page && params.page > 1) qs.set("page", String(params.page));
@@ -62,7 +64,11 @@ const loadData = async (sdSlug: string, page: number, category?: string, tag?: s
   try {
     posts = await fetchCached<PostInterface[]>("/posts/public/" + config.church.id + "?" + qs.toString(), "ContentApi", sdSlug);
   } catch { posts = []; }
-  return { config, posts: Array.isArray(posts) ? posts : [] };
+  let categories: string[] = [];
+  try {
+    categories = await fetchCached<string[]>("/posts/public/" + config.church.id + "/categories", "ContentApi", sdSlug);
+  } catch { categories = []; }
+  return { config, posts: Array.isArray(posts) ? posts : [], categories: Array.isArray(categories) ? categories : [] };
 };
 
 export default async function BlogListPage({ params, searchParams }: { params: PageParams; searchParams: SearchParams }) {
@@ -70,7 +76,7 @@ export default async function BlogListPage({ params, searchParams }: { params: P
   const { sdSlug } = await params;
   const { page: pageParam, category, tag } = await searchParams;
   const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
-  const { config, posts } = await loadData(sdSlug, page, category, tag);
+  const { config, posts, categories } = await loadData(sdSlug, page, category, tag);
 
   const activeFilter = category || tag;
 
@@ -82,6 +88,14 @@ export default async function BlogListPage({ params, searchParams }: { params: P
         <Container sx={{ py: 4 }}>
           <div id="mainContent">
             <Typography variant="h3" component="h1" sx={{ mb: 3 }}>Blog</Typography>
+
+            {categories.length > 0 && (
+              <Box sx={{ mb: 3, display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {categories.map((c) => (
+                  <Chip key={c} size="small" label={c} component={Link} href={c === category ? "/blog" : buildQuery({ category: c })} clickable color={c === category ? "primary" : "default"} />
+                ))}
+              </Box>
+            )}
 
             {activeFilter && (
               <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
@@ -103,12 +117,16 @@ export default async function BlogListPage({ params, searchParams }: { params: P
                       </Link>
                     )}
                     <CardContent sx={{ flexGrow: 1 }}>
-                      {post.category && <Chip size="small" label={post.category} sx={{ mb: 1 }} />}
+                      {post.category && <Chip size="small" label={post.category} component={Link} href={buildQuery({ category: post.category })} clickable sx={{ mb: 1 }} />}
                       <Typography variant="h6" component="h2">
                         <Link href={"/blog/" + post.slug}>{post.title}</Link>
                       </Typography>
-                      {post.publishDate && <Typography variant="caption" color="text.secondary">{formatDate(post.publishDate)}</Typography>}
-                      {post.excerpt && <Typography variant="body2" sx={{ mt: 1 }}>{post.excerpt}</Typography>}
+                      {(post.authorName || post.publishDate) && (
+                        <Typography variant="caption" color="text.secondary">
+                          {[post.authorName ? "By " + post.authorName : "", formatDate(post.publishDate)].filter(Boolean).join(" · ")}
+                        </Typography>
+                      )}
+                      {excerptOf(post) && <Typography variant="body2" sx={{ mt: 1 }}>{excerptOf(post)}</Typography>}
                     </CardContent>
                   </Card>
                 ))}
