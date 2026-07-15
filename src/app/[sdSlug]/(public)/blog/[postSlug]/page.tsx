@@ -73,10 +73,7 @@ export default async function BlogPostPage({ params }: { params: PageParams }) {
       <Theme config={config} />
       <BlogPostingJsonLd config={config} post={post} url={url} />
       <DefaultPageWrapper config={config}>
-        {post.photoUrl && (
-          <Box component="img" src={post.photoUrl} alt={post.title || ""} sx={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />
-        )}
-        <Container sx={{ py: 4 }}>
+        <Container maxWidth="md" sx={{ py: 4 }}>
           <div id="mainContent">
             <Typography variant="h3" component="h1">{post.title}</Typography>
             {(post.authorName || post.publishDate) && (
@@ -86,11 +83,20 @@ export default async function BlogPostPage({ params }: { params: PageParams }) {
             )}
             {(post.category || post.tags) && (
               <Box sx={{ mt: 1, display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {post.category && <Chip size="small" label={post.category} component={Link} href={"/blog?category=" + encodeURIComponent(post.category)} clickable />}
+                {post.category && (
+                  <Link href={"/blog?category=" + encodeURIComponent(post.category)} style={{ textDecoration: "none" }}>
+                    <Chip size="small" label={post.category} clickable />
+                  </Link>
+                )}
                 {post.tags?.split(",").map((t) => t.trim()).filter(Boolean).map((t) => (
-                  <Chip key={t} size="small" variant="outlined" label={t} component={Link} href={"/blog?tag=" + encodeURIComponent(t)} clickable />
+                  <Link key={t} href={"/blog?tag=" + encodeURIComponent(t)} style={{ textDecoration: "none" }}>
+                    <Chip size="small" variant="outlined" label={t} clickable />
+                  </Link>
                 ))}
               </Box>
+            )}
+            {post.photoUrl && (
+              <Box component="img" src={post.photoUrl} alt={post.title || ""} sx={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 2, mt: 3, display: "block" }} />
             )}
             {post.content && <Box sx={{ mt: 3 }}><MarkdownPreviewLight value={post.content} /></Box>}
             {related.length > 0 && (
