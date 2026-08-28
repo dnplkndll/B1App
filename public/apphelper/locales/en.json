@@ -59,6 +59,10 @@
 			"expirationYear": "Expiration Year:",
 			"updated": "Card updated successfully."
 		},
+		"common": {
+			"cancel": "Cancel",
+			"error": "Error"
+		},
 		"donationForm": {
 			"annually": "Annually",
 			"biWeekly": "Bi-Weekly",
@@ -97,6 +101,32 @@
 			"amount": "Amount",
 			"fund": "Fund"
 		},
+		"kingdomFunding": {
+			"enterBankDetails": "Enter your bank account details",
+			"enterCardDetails": "Enter card details",
+			"errorProcessingDonation": "Error processing donation",
+			"failedToInitPaymentForm": "Failed to initialize payment form",
+			"failedToLoadPaymentForm": "Failed to load payment form",
+			"failedToProcessCard": "Failed to process card. Please check your card details and try again.",
+			"failedToTokenizeCard": "Failed to tokenize card",
+			"gatewayConfigMissing": "Payment form not available. Gateway configuration missing.",
+			"loadingPaymentForm": "Loading payment form...",
+			"memo": "Memo (optional)",
+			"missingTokenizationKey": "Missing tokenization key",
+			"payWithBank": "Bank (ACH)",
+			"payWithCard": "Card",
+			"paymentFormNotAvailable": "Payment form not available",
+			"paymentFormNotInitialized": "Payment form not initialized",
+			"paymentProvider": "Payment Provider",
+			"providerName": "Kingdom Funding",
+			"unexpectedError": "An unexpected error occurred. Please try again.",
+			"validate": {
+				"accountNumber": "Please enter a valid account number",
+				"captchaFailed": "reCAPTCHA verification failed. Please try again.",
+				"captchaRequired": "Please complete the reCAPTCHA verification",
+				"routingNumber": "Please enter a valid routing number"
+			}
+		},
 		"page": {
 			"amount": "Amount",
 			"batch": "Batch",
@@ -110,8 +140,15 @@
 			"addCard": "Add Card",
 			"confirmDelete": "Are you sure you wish to delete this payment method?",
 			"deleted": "Payment method deleted.",
+			"noMethod": "No Method",
 			"noMethods": "No payment methods.  Add a payment method to make a donation.",
 			"verify": "Verify Account"
+		},
+		"paystack": {
+			"emailRequired": "An email address is required to pay with Paystack.",
+			"paymentFailed": "Payment was not completed.",
+			"popupHint": "You'll complete payment in a secure Paystack window. Card, mobile money and bank transfer are accepted.",
+			"saveOnlyWithGift": "Payment methods are saved when you give — check \"Save this card\" while making a gift."
 		},
 		"preview": {
 			"date": "Donation Date",
@@ -130,48 +167,17 @@
 			"confirmPause": "Are you sure you want to pause this recurring donation?",
 			"every": "Every",
 			"interval": "Interval",
+			"noSubscriptions": "No Subscriptions",
 			"notFound": "Payment method not found.",
-			"paused": "Paused",
-			"pausedMessage": "Recurring donation paused.",
 			"pauseFailed": "Failed to pause recurring donation. Please try again.",
 			"pauseTooltip": "Pause recurring donation",
+			"paused": "Paused",
+			"pausedMessage": "Recurring donation paused.",
 			"paymentMethod": "Payment Method",
-			"resumedMessage": "Recurring donation resumed.",
 			"resumeFailed": "Failed to resume recurring donation. Please try again.",
 			"resumeTooltip": "Resume recurring donation",
+			"resumedMessage": "Recurring donation resumed.",
 			"startDate": "Start Date"
-		},
-		"kingdomFunding": {
-			"providerName": "Kingdom Funding",
-			"loadingPaymentForm": "Loading payment form...",
-			"paymentFormNotAvailable": "Payment form not available",
-			"paymentFormNotInitialized": "Payment form not initialized",
-			"failedToInitPaymentForm": "Failed to initialize payment form",
-			"failedToLoadPaymentForm": "Failed to load payment form",
-			"failedToTokenizeCard": "Failed to tokenize card",
-			"missingTokenizationKey": "Missing tokenization key",
-			"failedToProcessCard": "Failed to process card. Please check your card details and try again.",
-			"unexpectedError": "An unexpected error occurred. Please try again.",
-			"errorProcessingDonation": "Error processing donation",
-			"enterBankDetails": "Enter your bank account details",
-			"enterCardDetails": "Enter card details",
-			"payWithCard": "Card",
-			"payWithBank": "Bank (ACH)",
-			"gatewayConfigMissing": "Payment form not available. Gateway configuration missing.",
-			"paymentProvider": "Payment Provider",
-			"memo": "Memo (optional)",
-			"validate": {
-				"routingNumber": "Please enter a valid routing number",
-				"accountNumber": "Please enter a valid account number",
-				"captchaRequired": "Please complete the reCAPTCHA verification",
-				"captchaFailed": "reCAPTCHA verification failed. Please try again."
-			}
-		},
-		"paystack": {
-			"popupHint": "You'll complete payment in a secure Paystack window. Card, mobile money and bank transfer are accepted.",
-			"saveOnlyWithGift": "Payment methods are saved when you give — check \"Save this card\" while making a gift.",
-			"emailRequired": "An email address is required to pay with Paystack.",
-			"paymentFailed": "Payment was not completed."
 		}
 	},
 	"eventCalendar": {
@@ -223,11 +229,11 @@
 	},
 	"formSubmissionEdit": {
 		"back": "Back",
-		"continue": "Continue",
-		"stepProgress": "{current} of {total}",
 		"confirmDelete": "Are you sure you wish to delete this form data?",
+		"continue": "Continue",
 		"editForm": "Edit Form",
 		"isRequired": "is required",
+		"stepProgress": "{current} of {total}",
 		"submit": "Submit"
 	},
 	"gallery": {
@@ -306,6 +312,8 @@
 		"comment": "comment",
 		"comments": "comments",
 		"notes": "Notes",
+		"notifyOff": "Notify Off",
+		"notifyOn": "Notify On",
 		"openFile": "Open file",
 		"startConversation": "Start a conversation",
 		"validate": {
@@ -372,6 +380,7 @@
 		"messages": "Messages",
 		"newPrivateMessage": "New Private Message",
 		"notifications": "Notifications",
+		"privateConversation": "Private Conversation",
 		"privateMessage": "Private Message",
 		"profile": "Profile",
 		"searchForPerson": "Search for a person",
