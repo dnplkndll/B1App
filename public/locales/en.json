@@ -543,7 +543,6 @@
     },
     "invalidLink": "Invalid link",
     "invalidLinkDescription": "The requested ID is missing or invalid.",
-    "loading": "Loading",
     "me": {
       "event": "Event",
       "myRequests": "My Requests",
