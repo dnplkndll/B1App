@@ -69,6 +69,24 @@ test.describe("Mobile groups", () => {
     await expect(page.getByRole("tab", { name: /About/i })).toBeVisible({ timeout: 15000 });
     await expect(page.locator('[data-testid="group-contact-first-name-input"]')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('[data-testid="group-contact-submit-button"]')).toBeVisible();
+
+    // Issue #1119: the fields were labelled with the raw keys "groups.firstName" etc.,
+    // which do not exist in the locale files, so Locale.label() echoed the key back.
+    const names: [string, string][] = [
+      ["group-contact-first-name-input", "Your first name"],
+      ["group-contact-last-name-input", "Your last name"],
+      ["group-contact-email-input", "Your email address"],
+      ["group-contact-phone-input", "Your phone number"],
+      ["group-contact-message-input", "Your message to the group leader"]
+    ];
+    for (const [testId, name] of names) {
+      await expect(page.getByTestId(testId)).toHaveAccessibleName(name);
+    }
+
+    const main = page.locator("main");
+    for (const key of ["groups.firstName", "groups.lastName", "groups.email", "groups.phone", "groups.message"]) {
+      await expect(main, `"${key}" must never render as literal text`).not.toContainText(key);
+    }
   });
 
   test("leaving a group asks for confirmation first", async ({ page }) => {
@@ -196,6 +214,89 @@ test.describe.serial("Mobile group event reminders", () => {
 
     await expect(dialog).not.toContainText("mobile.group.reminders.");
     await expect(dialog.getByText("Send reminders", { exact: true })).toBeVisible({ timeout: 10000 });
+  });
+});
+
+test.describe.serial("Mobile recurring group event edits", () => {
+  const GROUP_ID = "GRP00000023";
+  const title = `Recurring Test ${Date.now()}`;
+  let eventId: string;
+  let seriesStart: Date;
+  let auth: { headers: { Authorization: string } };
+
+  const getEvent = async () => {
+    const ctx = await request.newContext();
+    const ev = await (await ctx.get(`${MAIN_API}/content/events/${eventId}`, auth)).json();
+    await ctx.dispose();
+    return ev;
+  };
+
+  const openTodaysOccurrence = async (page: any, name: string) => {
+    await page.goto(`/mobile/groups/${GROUP_ID}`);
+    await page.getByRole("tab", { name: /Events/i }).click();
+    const editEvent = page.getByRole("button", { name: /^Edit event$/i });
+    const card = page.locator("main div").filter({ hasText: name }).filter({ has: editEvent }).last();
+    await expect(card).toBeVisible({ timeout: 15000 });
+    await card.getByRole("button", { name: /^Edit event$/i }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/^Edit event$/i)).toBeVisible({ timeout: 5000 });
+    return dialog;
+  };
+
+  test.beforeAll(async () => {
+    const ctx = await request.newContext();
+    const login = await (await ctx.post(`${MAIN_API}/membership/users/login`, { data: { email: "demo@b1.church", password: "password" } })).json();
+    const uc = (login.userChurches || []).find((c: any) => c.church?.id === CHURCH_ID) || login.userChurches?.[0];
+    auth = { headers: { Authorization: "Bearer " + (uc?.jwt as string) } };
+    seriesStart = new Date();
+    seriesStart.setDate(seriesStart.getDate() - 28);
+    seriesStart.setHours(18, 0, 0, 0);
+    const end = new Date(seriesStart);
+    end.setHours(19, 0, 0, 0);
+    const created = await (await ctx.post(`${MAIN_API}/content/events`, {
+      ...auth,
+      data: [{ groupId: GROUP_ID, title, start: seriesStart, end, allDay: false, visibility: "public", recurrenceRule: "FREQ=WEEKLY;INTERVAL=1" }]
+    })).json();
+    eventId = (Array.isArray(created) ? created[0] : created)?.id;
+    expect(eventId, "created event id").toBeTruthy();
+    await ctx.dispose();
+  });
+
+  test.afterAll(async () => {
+    const ctx = await request.newContext();
+    if (eventId) await ctx.delete(`${MAIN_API}/content/events/${eventId}`, auth);
+    await ctx.dispose();
+  });
+
+  test("editing all occurrences from a later date keeps the series start", async ({ page }) => {
+    const dialog = await openTodaysOccurrence(page, title);
+    await dialog.locator('[data-testid="event-title-input"]').fill(title + " All");
+    await dialog.getByRole("button", { name: /^Save Changes$/ }).click();
+    await page.getByTestId("edit-recurring-all-radio").click();
+    await page.getByTestId("edit-recurring-save-button").click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+
+    const ev = await getEvent();
+    expect(ev.title).toBe(title + " All");
+    expect(new Date(ev.start).getTime()).toBe(seriesStart.getTime());
+  });
+
+  test("deleting this and future occurrences keeps the earlier ones", async ({ page }) => {
+    const dialog = await openTodaysOccurrence(page, title + " All");
+    await dialog.getByRole("button", { name: /^Delete event$/i }).click();
+    await page.getByTestId("edit-recurring-future-radio").click();
+    await page.getByTestId("edit-recurring-save-button").click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+
+    const ev = await getEvent();
+    expect(new Date(ev.start).getTime()).toBe(seriesStart.getTime());
+    const until = /UNTIL=(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/.exec(ev.recurrenceRule || "");
+    expect(until, ev.recurrenceRule).toBeTruthy();
+    const untilDate = new Date(Date.UTC(+until![1], +until![2] - 1, +until![3], +until![4], +until![5], +until![6]));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expect(untilDate.getTime()).toBeLessThan(today.getTime());
+    expect(untilDate.getTime()).toBeGreaterThan(seriesStart.getTime() + 20 * 86400000);
   });
 });
 
